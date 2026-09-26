@@ -1,0 +1,7 @@
+{
+  "name": "GridSync - Stop the GridLock",
+  "description": "Cross-utility coordination tool detecting power grid project overlaps between FPL and Duke Energy to prevent gridlock and maximize shared crew savings.",
+  "capabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

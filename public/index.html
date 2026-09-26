@@ -1,0 +1,1946 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GridSync · Florida Multi-Utility Coordination Platform</title>
+<meta name="description" content="Cross-utility Florida infrastructure coordination platform uniting 10 electric and water utilities for FERC Order 1920 and Dig Once right-of-way compliance with a strict 5-mile logistics radar.">
+
+<!-- Retro Google Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700;800;900&display=swap" rel="stylesheet">
+
+<!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
+
+<style>
+  :root {
+    --bg-space: #0b0c16;
+    --panel-dark: #0f101f;
+    --card-dark: #14162a;
+    --cyber-cyan: #00f0ff;
+    --neon-pink: #ff007f;
+    --neon-yellow: #ffd700;
+    --neon-green: #10b981;
+    --neon-orange: #f97316;
+    --neon-purple: #8b5cf6;
+    --neon-blue: #2563eb;
+    --retro-border: rgba(0, 240, 255, 0.28);
+    --retro-glow: 0 0 15px rgba(0, 240, 255, 0.35);
+    --text-main: #f8fafc;
+    --text-muted: #94a3b8;
+  }
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    background-color: var(--bg-space);
+    color: var(--text-main);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow-x: hidden;
+  }
+
+  /* Scanline retro aesthetic */
+  body::before {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    background: linear-gradient(rgba(18, 16, 38, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
+    background-size: 100% 4px;
+    z-index: 999;
+    opacity: 0.18;
+  }
+
+  /* ========================================================
+     1. RETRO SYNTHWAVE NAVBAR
+     ======================================================== */
+  .retro-navbar {
+    height: 72px;
+    background: rgba(11, 12, 22, 0.94);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--retro-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+    z-index: 30;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.6);
+  }
+
+  .nav-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .retro-logo {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, var(--neon-pink), var(--cyber-cyan));
+    border-radius: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    box-shadow: 0 0 16px rgba(0, 240, 255, 0.5);
+  }
+
+  .brand-title-wrap {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .retro-title-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .brand-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 19px;
+    font-weight: 900;
+    color: #ffffff;
+    letter-spacing: -0.5px;
+  }
+
+  .anniv-badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    font-weight: 800;
+    background: rgba(255, 0, 127, 0.18);
+    border: 1px solid var(--neon-pink);
+    color: var(--neon-pink);
+    padding: 2px 7px;
+    border-radius: 4px;
+    letter-spacing: 0.5px;
+  }
+
+  .brand-subtitle {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .nav-center {
+    display: flex;
+    align-items: center;
+  }
+
+  .retro-hud-banner {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 800;
+    padding: 6px 14px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    letter-spacing: 0.3px;
+    transition: all 0.3s ease;
+  }
+
+  .retro-hud-banner.red {
+    background: rgba(239, 68, 68, 0.16);
+    border: 1px solid #ef4444;
+    color: #fca5a5;
+    box-shadow: 0 0 16px rgba(239, 68, 68, 0.3);
+  }
+
+  .retro-hud-banner.green {
+    background: rgba(16, 185, 129, 0.16);
+    border: 1px solid #10b981;
+    color: #86efac;
+    box-shadow: 0 0 16px rgba(16, 185, 129, 0.3);
+  }
+
+  .pulse-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    animation: blink 1.2s infinite ease-in-out;
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.3; transform: scale(0.8); }
+  }
+
+  .nav-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .legend-badge {
+    font-size: 10px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    padding: 3px 7px;
+    border-radius: 5px;
+    border: 1px solid;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+  }
+
+  /* Electric Utility Badges */
+  .badge-fpl { border-color: rgba(37, 99, 235, 0.6); background: rgba(37, 99, 235, 0.18); color: #93c5fd; }
+  .badge-duke { border-color: rgba(249, 115, 22, 0.6); background: rgba(249, 115, 22, 0.18); color: #fdba74; }
+  .badge-keys { border-color: rgba(16, 185, 129, 0.6); background: rgba(16, 185, 129, 0.18); color: #6ee7b7; }
+  .badge-keyscoop { border-color: rgba(139, 92, 246, 0.6); background: rgba(139, 92, 246, 0.18); color: #c4b5fd; }
+  .badge-glades { border-color: rgba(6, 182, 212, 0.6); background: rgba(6, 182, 212, 0.18); color: #67e8f9; }
+
+  /* Water Utility Badges */
+  .badge-wasd { border-color: rgba(20, 184, 166, 0.6); background: rgba(20, 184, 166, 0.18); color: #5eead4; }
+  .badge-bcwws { border-color: rgba(59, 130, 246, 0.6); background: rgba(30, 58, 138, 0.45); color: #93c5fd; }
+  .badge-pbcwud { border-color: rgba(56, 189, 248, 0.6); background: rgba(56, 189, 248, 0.18); color: #7dd3fc; }
+  .badge-fgua { border-color: rgba(96, 165, 250, 0.6); background: rgba(96, 165, 250, 0.18); color: #bfdbfe; }
+  .badge-tampawater { border-color: rgba(29, 78, 216, 0.6); background: rgba(29, 78, 216, 0.25); color: #60a5fa; }
+
+  .btn-header-action {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 800;
+    padding: 7px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .btn-legend-toggle {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    color: #cbd5e1;
+  }
+  .btn-legend-toggle:hover {
+    background: rgba(0, 240, 255, 0.15);
+    border-color: var(--cyber-cyan);
+    color: #ffffff;
+  }
+
+  .btn-dispatcher-toggle {
+    background: linear-gradient(135deg, rgba(255, 0, 127, 0.25), rgba(0, 240, 255, 0.25));
+    border: 1px solid var(--cyber-cyan);
+    color: #ffffff;
+    box-shadow: 0 0 14px rgba(0, 240, 255, 0.3);
+  }
+  .btn-dispatcher-toggle:hover {
+    background: linear-gradient(135deg, rgba(255, 0, 127, 0.4), rgba(0, 240, 255, 0.45));
+    box-shadow: 0 0 20px rgba(0, 240, 255, 0.6);
+  }
+
+  /* ========================================================
+     2. SPLIT-SCREEN CONTAINER (STRICT TWO-COLUMN SPLIT LAYOUT)
+     ======================================================== */
+  .retro-split-container {
+    height: calc(100vh - 70px) !important;
+    display: flex !important;
+    flex-direction: row !important;
+    overflow: hidden !important;
+    position: relative;
+    width: 100%;
+  }
+
+  /* LEFT COLUMN: 65%–70% MAP PANE */
+  .map-pane-column {
+    flex: 7;
+    width: 68% !important;
+    min-width: 0;
+    height: 100% !important;
+    min-height: 100% !important;
+    position: relative;
+    background: #0b0c16;
+    overflow: hidden;
+  }
+
+  #map {
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 100% !important;
+    position: relative;
+    z-index: 1;
+    display: block !important;
+  }
+
+  .map-floating-bar {
+    position: absolute;
+    bottom: 22px;
+    left: 20px;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(11, 12, 22, 0.9);
+    backdrop-filter: blur(14px);
+    border: 1px solid rgba(0, 240, 255, 0.35);
+    padding: 7px 12px;
+    border-radius: 10px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6);
+    flex-wrap: wrap;
+  }
+
+  .chip-btn {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #f1f5f9;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 5px 9px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .chip-btn:hover {
+    background: var(--cyber-cyan);
+    border-color: var(--cyber-cyan);
+    color: #0b0c16;
+  }
+
+  .chip-btn.active {
+    background: var(--cyber-cyan);
+    border-color: var(--cyber-cyan);
+    color: #0b0c16;
+    font-weight: 800;
+    box-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+  }
+
+  /* RIGHT COLUMN: 30%–35% RETRO DISPATCH SIDEBAR */
+  .sidebar-pane-column {
+    flex: 3;
+    width: 32% !important;
+    min-width: 320px;
+    max-width: 480px;
+    background: var(--panel-dark);
+    border-left: 1px solid var(--retro-border);
+    height: 100% !important;
+    min-height: 100% !important;
+    overflow-y: auto !important;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    box-shadow: -10px 0 32px rgba(0, 0, 0, 0.6);
+    z-index: 15;
+  }
+
+  .sidebar-pane-column::-webkit-scrollbar {
+    width: 6px;
+  }
+  .sidebar-pane-column::-webkit-scrollbar-thumb {
+    background: rgba(0, 240, 255, 0.25);
+    border-radius: 9999px;
+  }
+
+  /* Sidebar Tabs */
+  .retro-tabs-row {
+    display: flex;
+    gap: 6px;
+    background: #0b0c16;
+    padding: 4px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .retro-tab-btn {
+    flex: 1;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11.5px;
+    font-weight: 800;
+    padding: 8px 10px;
+    border: 1px solid transparent;
+    border-radius: 7px;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+
+  .retro-tab-btn.active {
+    background: linear-gradient(135deg, rgba(0, 240, 255, 0.18), rgba(255, 0, 127, 0.18));
+    border-color: var(--cyber-cyan);
+    color: #ffffff;
+    box-shadow: 0 0 12px rgba(0, 240, 255, 0.25);
+  }
+
+  /* Retro Cards */
+  .retro-card {
+    background: var(--card-dark);
+    border: 1px solid rgba(0, 240, 255, 0.22);
+    border-radius: 14px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 11px;
+    position: relative;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+  }
+
+  .card-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .retro-heading {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13.5px;
+    font-weight: 800;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .neon-pill {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9.5px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    background: rgba(0, 240, 255, 0.12);
+    border: 1px solid var(--cyber-cyan);
+    color: var(--cyber-cyan);
+    padding: 2px 7px;
+    border-radius: 4px;
+  }
+
+  .card-desc {
+    font-size: 11.5px;
+    color: var(--text-muted);
+    line-height: 1.45;
+  }
+
+  /* Form Elements */
+  .retro-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 800;
+    color: #94a3b8;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+    display: block;
+  }
+
+  .retro-input, .retro-select {
+    width: 100%;
+    padding: 9px 11px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: #0b0c16;
+    color: #ffffff;
+    font-size: 12px;
+    outline: none;
+    transition: border-color 0.2s ease;
+  }
+
+  .retro-input:focus, .retro-select:focus {
+    border-color: var(--cyber-cyan);
+    box-shadow: 0 0 10px rgba(0, 240, 255, 0.25);
+  }
+
+  .preset-pills-row {
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+    margin-top: 2px;
+  }
+
+  .preset-btn {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: #cbd5e1;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 4px 8px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .preset-btn:hover {
+    background: rgba(0, 240, 255, 0.2);
+    border-color: var(--cyber-cyan);
+    color: #ffffff;
+  }
+
+  .coord-box {
+    background: #0b0c16;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 8px;
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 11.5px;
+  }
+
+  .coord-box b {
+    color: var(--cyber-cyan);
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .btn-scan {
+    background: linear-gradient(135deg, var(--cyber-cyan), #0284c7);
+    color: #0b0c16;
+    border: none;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 900;
+    font-size: 12px;
+    padding: 11px;
+    border-radius: 8px;
+    cursor: pointer;
+    box-shadow: 0 0 18px rgba(0, 240, 255, 0.4);
+    transition: all 0.2s ease;
+  }
+  .btn-scan:hover {
+    filter: brightness(1.15);
+    transform: translateY(-1px);
+  }
+
+  /* Result Banner */
+  .result-banner {
+    padding: 12px;
+    border-radius: 8px;
+    display: none;
+    font-size: 12px;
+    line-height: 1.45;
+  }
+
+  .result-banner.clash {
+    background: rgba(239, 68, 68, 0.18);
+    border: 1px solid #ef4444;
+    border-left: 4px solid #ef4444;
+    color: #fecaca;
+    display: block;
+    animation: retroBorderGlow 2s infinite ease-in-out;
+  }
+
+  @keyframes retroBorderGlow {
+    0% { box-shadow: 0 0 0 rgba(239, 68, 68, 0); }
+    50% { box-shadow: 0 0 16px rgba(239, 68, 68, 0.45); }
+    100% { box-shadow: 0 0 0 rgba(239, 68, 68, 0); }
+  }
+
+  .result-banner.clear {
+    background: rgba(16, 185, 129, 0.18);
+    border: 1px solid #10b981;
+    border-left: 4px solid #10b981;
+    color: #bbf7d0;
+    display: block;
+    box-shadow: 0 0 16px rgba(16, 185, 129, 0.25);
+  }
+
+  /* ========================================================
+     3. ASSISTANT TERMINAL
+     ======================================================== */
+  .qa-terminal {
+    background: #080911;
+    border: 1px solid var(--cyber-cyan);
+    border-radius: 10px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    box-shadow: 0 0 18px rgba(0, 240, 255, 0.16);
+  }
+
+  .qa-output {
+    min-height: 80px;
+    max-height: 200px;
+    overflow-y: auto;
+    font-size: 12px;
+    line-height: 1.5;
+    color: #e2e8f0;
+    background: rgba(0, 0, 0, 0.4);
+    padding: 10px;
+    border-radius: 6px;
+    font-family: 'Inter', sans-serif;
+    scroll-behavior: smooth;
+  }
+  .qa-output::-webkit-scrollbar {
+    width: 4px;
+  }
+  .qa-output::-webkit-scrollbar-thumb {
+    background: rgba(0, 240, 255, 0.35);
+    border-radius: 4px;
+  }
+
+  .qa-input-row {
+    display: flex;
+    gap: 6px;
+  }
+
+  .qa-input {
+    flex: 1;
+    background: #121324;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 6px;
+    padding: 8px 10px;
+    font-size: 11.5px;
+    color: #ffffff;
+    outline: none;
+  }
+  .qa-input:focus { border-color: var(--cyber-cyan); }
+
+  .qa-send-btn {
+    background: var(--cyber-cyan);
+    color: #0b0c16;
+    border: none;
+    font-weight: 800;
+    font-size: 11px;
+    padding: 0 14px;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+
+  /* Directory Card */
+  .contact-card {
+    background: rgba(11, 12, 22, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 10px;
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .contact-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 11px;
+  }
+
+  .contact-util {
+    font-weight: 800;
+    font-family: 'JetBrains Mono', monospace;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  /* ========================================================
+     MAP MARKERS & ANIMATIONS
+     ======================================================== */
+  .custom-pin-html {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ffffff;
+    font-weight: 800;
+    font-size: 13px;
+    border: 2px solid #ffffff;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .custom-pin-html:hover { transform: scale(1.25); }
+
+  /* 10 Utility Pins */
+  .custom-pin-html.fpl { background: #2563eb; box-shadow: 0 0 14px rgba(37, 99, 235, 0.8); }
+  .custom-pin-html.duke { background: #f97316; box-shadow: 0 0 14px rgba(249, 115, 22, 0.8); }
+  .custom-pin-html.keys { background: #10b981; box-shadow: 0 0 14px rgba(16, 185, 129, 0.8); }
+  .custom-pin-html.keyscoop { background: #8b5cf6; box-shadow: 0 0 14px rgba(139, 92, 246, 0.8); }
+  .custom-pin-html.glades { background: #06b6d4; box-shadow: 0 0 14px rgba(6, 182, 212, 0.8); }
+
+  .custom-pin-html.wasd { background: #14b8a6; box-shadow: 0 0 14px rgba(20, 184, 166, 0.8); }
+  .custom-pin-html.bcwws { background: #1e3a8a; box-shadow: 0 0 14px rgba(30, 58, 138, 0.9); border: 2px solid #60a5fa; }
+  .custom-pin-html.pbcwud { background: #38bdf8; box-shadow: 0 0 14px rgba(56, 189, 248, 0.8); }
+  .custom-pin-html.fgua { background: #60a5fa; box-shadow: 0 0 14px rgba(96, 165, 250, 0.8); }
+  .custom-pin-html.tampawater { background: #1d4ed8; box-shadow: 0 0 14px rgba(29, 78, 216, 0.85); }
+
+  .custom-pin-html.clash {
+    border-color: #f87171;
+    animation: ringPulse 1.8s infinite;
+  }
+
+  @keyframes ringPulse {
+    0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.8); }
+    70% { box-shadow: 0 0 0 12px rgba(239, 68, 68, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+  }
+
+  /* Proposed Purple Pin Marker (Manual Click) */
+  .proposed-pin-marker {
+    width: 36px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    filter: drop-shadow(0 0 12px rgba(139, 92, 246, 0.85));
+    animation: purplePinPulse 1.8s infinite ease-in-out;
+  }
+  @keyframes purplePinPulse {
+    0% { transform: scale(1); filter: drop-shadow(0 0 8px rgba(139, 92, 246, 0.75)); }
+    50% { transform: scale(1.08); filter: drop-shadow(0 0 18px rgba(139, 92, 246, 1)); }
+    100% { transform: scale(1); filter: drop-shadow(0 0 8px rgba(139, 92, 246, 0.75)); }
+  }
+
+  /* Assistant Recommendation Distinct Neon Magenta / White Pin (Agent Plot) */
+  .assistant-neon-magenta-pin {
+    width: 38px;
+    height: 46px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    filter: drop-shadow(0 0 14px rgba(255, 0, 127, 0.95)) drop-shadow(0 0 22px rgba(255, 255, 255, 0.75));
+    animation: assistantMagentaPulse 1.8s infinite ease-in-out;
+  }
+  @keyframes assistantMagentaPulse {
+    0% { transform: scale(1); filter: drop-shadow(0 0 10px rgba(255, 0, 127, 0.9)) drop-shadow(0 0 18px rgba(255, 255, 255, 0.6)); }
+    50% { transform: scale(1.12); filter: drop-shadow(0 0 24px rgba(255, 0, 127, 1)) drop-shadow(0 0 34px rgba(255, 255, 255, 0.95)); }
+    100% { transform: scale(1); filter: drop-shadow(0 0 10px rgba(255, 0, 127, 0.9)) drop-shadow(0 0 18px rgba(255, 255, 255, 0.6)); }
+  }
+
+  /* Pulsing 5-Mile Clear Radar Circle (Emerald Green) */
+  .radar-circle-pulse-clear {
+    animation: radarClearPulse 2.2s infinite ease-in-out;
+  }
+  @keyframes radarClearPulse {
+    0% { stroke-width: 2.5px; stroke: #10b981; fill: #10b981; fill-opacity: 0.14; }
+    50% { stroke-width: 4.5px; stroke: #86efac; fill: #10b981; fill-opacity: 0.28; }
+    100% { stroke-width: 2.5px; stroke: #10b981; fill: #10b981; fill-opacity: 0.14; }
+  }
+
+  /* Modals */
+  .retro-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.82);
+    backdrop-filter: blur(8px);
+    z-index: 100;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .retro-modal-overlay.open { display: flex; }
+
+  .retro-modal-card {
+    background: #121324;
+    border: 1px solid var(--cyber-cyan);
+    border-radius: 14px;
+    width: 640px;
+    max-width: 100%;
+    padding: 20px;
+    box-shadow: 0 0 32px rgba(0, 240, 255, 0.35);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  /* Preserve two-column layout across all viewports */
+  @media (max-width: 900px) {
+    .retro-navbar { padding: 0 12px; }
+    .brand-title { font-size: 16px; }
+    .brand-subtitle { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- 1. RETRO SHELLHACKS NAVBAR -->
+<header class="retro-navbar">
+  <div class="nav-left">
+    <div class="retro-logo">⚡</div>
+    <div class="brand-title-wrap">
+      <div class="retro-title-row">
+        <span class="brand-title">GridSync</span>
+        <span class="anniv-badge">SHELLHACKS 10TH ANNIV. RETRO EDITION</span>
+      </div>
+      <div class="brand-subtitle">Florida Multi-Utility Coordination Platform · 10 Electric & Water Utilities</div>
+    </div>
+  </div>
+
+  <div class="nav-center">
+    <div id="hudBanner" class="retro-hud-banner red">
+      <span class="pulse-dot" style="background:#ef4444"></span>
+      <span id="hudBannerText">INITIALIZING 5-MILE LOGISTICS RADAR...</span>
+    </div>
+  </div>
+
+  <div class="nav-right">
+    <button class="btn-header-action btn-legend-toggle" onclick="openLegendModal()">
+      <span>📋 10-UTILITY LEGEND</span>
+    </button>
+    <button class="btn-header-action btn-dispatcher-toggle" onclick="toggleDispatcherModal()">
+      <span>ASSISTANT</span>
+    </button>
+  </div>
+</header>
+
+<!-- 2. MAIN SPLIT-SCREEN CONTAINER (TWO-COLUMN SPLIT LAYOUT) -->
+<main class="retro-split-container" style="height: calc(100vh - 70px); display: flex; flex-direction: row; overflow: hidden; width: 100%;">
+  <!-- LEFT COLUMN (Map Area, 65%–70% width) -->
+  <section class="map-pane-column" style="flex: 7; width: 68%; height: 100%; position: relative; min-width: 0; overflow: hidden;">
+    <div id="map" class="w-full h-full relative" style="min-height: 100%; height: 100%; width: 100%; position: relative;"></div>
+    
+    <!-- Floating Bottom Control Bar -->
+    <div class="map-floating-bar">
+      <!-- Basemap Switcher -->
+      <div style="display:flex; gap:4px; border-right:1px solid rgba(255,255,255,0.18); padding-right:8px; margin-right:4px;">
+        <button id="btnTileEsri" class="chip-btn active" onclick="switchBaseTile('esri')">🗺️ Esri Street</button>
+        <button id="btnTileDark" class="chip-btn" onclick="switchBaseTile('dark')">🌌 CARTO Dark</button>
+        <button id="btnTilePositron" class="chip-btn" onclick="switchBaseTile('positron')">🗺️ CARTO Positron</button>
+        <button id="btnTileSat" class="chip-btn" onclick="switchBaseTile('sat')">🛰️ Satellite</button>
+      </div>
+      <!-- Regional Quick Zooms -->
+      <button class="chip-btn" onclick="zoomRegion('southfl')">South Florida</button>
+      <button class="chip-btn" onclick="zoomRegion('miami')">Miami-Dade</button>
+      <button class="chip-btn" onclick="zoomRegion('ftlauderdale')">Ft. Lauderdale</button>
+      <button class="chip-btn" onclick="zoomRegion('keys')">Florida Keys</button>
+      <button class="chip-btn" onclick="zoomRegion('tampa')">Tampa Bay</button>
+      <button class="chip-btn" onclick="zoomRegion('orlando')">Orlando</button>
+    </div>
+  </section>
+
+  <!-- RIGHT COLUMN (Sidebar Panel, 30%–35% width) -->
+  <aside class="sidebar-pane-column" style="flex: 3; width: 32%; height: 100%; overflow-y: auto;">
+    <!-- View Switcher -->
+    <div class="retro-tabs-row">
+      <button class="retro-tab-btn active" id="tabBtnSimulator" onclick="switchSidebarTab('simulator')">
+        🛠️ 5-MILE RADAR SIMULATOR
+      </button>
+      <button class="retro-tab-btn" id="tabBtnAssistant" onclick="switchSidebarTab('assistant')">
+        ASSISTANT
+      </button>
+    </div>
+
+    <!-- TAB 1: SITE TESTER SIMULATOR -->
+    <div id="paneSimulator" style="display:flex; flex-direction:column; gap:12px;">
+      <div class="retro-card">
+        <div class="card-top">
+          <span class="retro-heading">RADAR SIMULATOR</span>
+          <span class="neon-pill">5-MILE LOGISTICS RADAR</span>
+        </div>
+        <p class="card-desc">
+          Click anywhere on Florida to drop a proposed site pin. The 5-mile (8,046 m) radar instantly scans for Power vs Power crane overlaps and Power vs Water "Dig Once" road excavation conflicts.
+        </p>
+
+        <!-- Regional Presets -->
+        <div>
+          <label class="retro-label">DEMO SCENARIOS (CLICK TO SCAN)</label>
+          <div class="preset-pills-row">
+            <button type="button" class="preset-btn" onclick="applyPreset('Downtown Trench Overlap', 25.7680, -80.1910, 'FPL', 13)">
+              ⚠️ Miami Dig Once (Power &times; Water)
+            </button>
+            <button type="button" class="preset-btn" onclick="applyPreset('Ft. Lauderdale Utility Row', 26.1215, -80.1415, 'Broward BCWWS', 13)">
+              ⚠️ Broward Corridor Collision
+            </button>
+            <button type="button" class="preset-btn" onclick="applyPreset('Hialeah Joint Substation', 25.8540, -80.2900, 'Duke Energy', 13)">
+              ⚠️ Hialeah Joint Dig Overlap
+            </button>
+            <button type="button" class="preset-btn" onclick="applyPreset('Orlando Clear Build Zone', 28.5383, -81.3792, 'FPL', 11)">
+              ✅ Orlando (Clear to Build)
+            </button>
+          </div>
+        </div>
+
+        <!-- Your Utility Dropdown (10 Utilities: Electric & Water) -->
+        <div>
+          <label class="retro-label">YOUR UTILITY</label>
+          <select id="pickUtil" class="retro-select" onchange="scanForClashes()">
+            <optgroup label="Electric (Power)">
+              <option value="FPL">Florida Power & Light (FPL)</option>
+              <option value="Duke Energy" selected>Duke Energy Florida</option>
+              <option value="Keys Energy">Keys Energy Services</option>
+              <option value="Keys Co-op">Florida Keys Electric Co-op (Keys Co-op)</option>
+              <option value="Glades Co-op">Glades Electric Cooperative (Glades Co-op)</option>
+            </optgroup>
+            <optgroup label="Water (Civil/Trenches)">
+              <option value="Miami-Dade WASD">Miami-Dade Water & Sewer (WASD)</option>
+              <option value="Broward BCWWS">Broward County Water & Wastewater (BCWWS)</option>
+              <option value="Palm Beach PBCWUD">Palm Beach Water Utilities Dept (PBCWUD)</option>
+              <option value="FGUA">Florida Governmental Utility Authority (FGUA)</option>
+              <option value="Tampa Bay Water">Tampa Bay Water Regional Utility</option>
+            </optgroup>
+          </select>
+        </div>
+
+        <!-- Project Name -->
+        <div>
+          <label class="retro-label">PROJECT NAME</label>
+          <input id="pickName" class="retro-input" placeholder="e.g., Regional Trench Project" value="Regional Transmission & Pipe Feed">
+        </div>
+
+        <!-- Coordinates Inputs -->
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+          <div>
+            <label class="retro-label">LATITUDE</label>
+            <input id="pickLat" class="retro-input" type="number" step="0.0001" value="25.8195" oninput="onCoordManualChange()">
+          </div>
+          <div>
+            <label class="retro-label">LONGITUDE</label>
+            <input id="pickLng" class="retro-input" type="number" step="0.0001" value="-80.3553" oninput="onCoordManualChange()">
+          </div>
+        </div>
+
+        <!-- Dates -->
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+          <div>
+            <label class="retro-label">START DATE</label>
+            <input id="pickStart" class="retro-input" type="date" value="2027-04-01" onchange="scanForClashes()">
+          </div>
+          <div>
+            <label class="retro-label">END DATE</label>
+            <input id="pickEnd" class="retro-input" type="date" value="2027-10-01" onchange="scanForClashes()">
+          </div>
+        </div>
+
+        <!-- Coordinate Status Banner -->
+        <div class="coord-box">
+          <span>Target Coordinates:</span>
+          <b id="coordStatusText">[25.8195, -80.3553]</b>
+        </div>
+
+        <!-- Action Button -->
+        <button class="btn-scan" onclick="scanForClashes(true)">⚡ SCAN 5-MILE LOGISTICS RADAR</button>
+
+        <!-- Live Clash Result Alert -->
+        <div id="resultBanner" class="result-banner"></div>
+      </div>
+
+      <!-- Active Clashes Feed -->
+      <div class="retro-card" style="padding:14px;">
+        <div class="card-top">
+          <span style="font-family:'JetBrains Mono',monospace; font-size:12px; font-weight:800; color:#cbd5e1;">
+            COLLISION CORRIDORS (≤ 5 MI)
+          </span>
+          <span id="feedCountTag" style="font-family:'JetBrains Mono',monospace; font-size:11px; color:#ef4444; font-weight:800;">...</span>
+        </div>
+        <div id="feedListContainer" style="display:flex; flex-direction:column; gap:6px; margin-top:4px;">
+          <div style="font-size:11px; color:var(--text-muted); text-align:center;">Detecting overlaps...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 2: ASSISTANT -->
+    <div id="paneAssistant" style="display:none; flex-direction:column; gap:12px;">
+      <!-- Natural Language Q&A Terminal -->
+      <div class="qa-terminal">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <span style="font-family:'JetBrains Mono',monospace; font-size:11.5px; font-weight:800; color:var(--cyber-cyan);">
+            TERMINAL // ASSISTANT
+          </span>
+          <span style="font-size:9.5px; color:#10b981; font-family:'JetBrains Mono',monospace;">ONLINE</span>
+        </div>
+        
+        <div id="qaOutput" class="qa-output">
+          Ask the Assistant to find optimal build sites or clear transmission corridors in Florida. When a location is proposed, reply with "yes" or "plot it" to plot it directly onto your map:
+        </div>
+
+        <div style="display:flex; gap:4px; flex-wrap:wrap;">
+          <button type="button" class="preset-btn" style="font-size:9.5px;" onclick="askPreset('Where is an optimal, untouched location to build in Florida?')">
+            "Find clear build site"
+          </button>
+          <button type="button" class="preset-btn" style="font-size:9.5px;" onclick="askPreset('Yes, please plot this location on my map.')">
+            "Yes, plot it"
+          </button>
+          <button type="button" class="preset-btn" style="font-size:9.5px;" onclick="askPreset('Are there any Power vs Water collisions in Miami-Dade?')">
+            "Miami Dig Once collisions?"
+          </button>
+          <button type="button" class="preset-btn" style="font-size:9.5px;" onclick="askPreset('Explain the Dig Once initiative and shared mobilization savings.')">
+            "Explain Dig Once"
+          </button>
+        </div>
+
+        <div class="qa-input-row">
+          <input id="qaInput" class="qa-input" placeholder="Ask Assistant..." onkeydown="if(event.key==='Enter') sendDispatchQuestion()">
+          <button id="qaSendBtn" class="qa-send-btn" onclick="sendDispatchQuestion()">SEND</button>
+        </div>
+      </div>
+
+      <!-- Direct Utility Contacts -->
+      <div class="retro-card">
+        <div class="card-top">
+          <span class="retro-heading">UTILITY PM LIAISONS</span>
+          <span class="neon-pill">OPS DESK</span>
+        </div>
+        <p class="card-desc">
+          Official contacts for scheduling joint road excavation under the "Dig Once" policy & FERC Order 1920:
+        </p>
+
+        <div style="display:flex; flex-direction:column; gap:6px;">
+          <div class="contact-card">
+            <div class="contact-row">
+              <span class="contact-util" style="color:#60a5fa;">🔵 FPL Grid Ops</span>
+              <span style="color:#cbd5e1; font-family:'JetBrains Mono',monospace;">(305) 552-3552</span>
+            </div>
+            <div class="contact-row">
+              <span style="font-size:10px; color:#94a3b8;">gridops@fpl.com</span>
+              <button class="chip-btn" style="padding:2px 7px; font-size:9.5px;" onclick="openEmailGenerator('FPL', 'Miami Substation Upgrade', 'gridops@fpl.com')">Draft Inquiry</button>
+            </div>
+          </div>
+
+          <div class="contact-card">
+            <div class="contact-row">
+              <span class="contact-util" style="color:#5eead4;">💧 Miami-Dade WASD</span>
+              <span style="color:#cbd5e1; font-family:'JetBrains Mono',monospace;">(305) 274-9273</span>
+            </div>
+            <div class="contact-row">
+              <span style="font-size:10px; color:#94a3b8;">wasd-dispatch@miamidade.gov</span>
+              <button class="chip-btn" style="padding:2px 7px; font-size:9.5px;" onclick="openEmailGenerator('Miami-Dade WASD', 'Downtown Water Main Replacement', 'wasd-dispatch@miamidade.gov')">Draft Inquiry</button>
+            </div>
+          </div>
+
+          <div class="contact-card">
+            <div class="contact-row">
+              <span class="contact-util" style="color:#93c5fd;">🌊 Broward BCWWS</span>
+              <span style="color:#cbd5e1; font-family:'JetBrains Mono',monospace;">(954) 831-3250</span>
+            </div>
+            <div class="contact-row">
+              <span style="font-size:10px; color:#94a3b8;">bcwws-coordination@broward.org</span>
+              <button class="chip-btn" style="padding:2px 7px; font-size:9.5px;" onclick="openEmailGenerator('Broward BCWWS', 'Fort Lauderdale Pipe Trench', 'bcwws-coordination@broward.org')">Draft Inquiry</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </aside>
+</main>
+
+<!-- 10-UTILITY REFERENCE LEGEND MODAL -->
+<div class="retro-modal-overlay" id="legendModal">
+  <div class="retro-modal-card">
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+      <span style="font-family:'JetBrains Mono',monospace; font-size:14px; font-weight:800; color:var(--cyber-cyan);">
+        10 REGIONAL FLORIDA UTILITIES & 5-MILE LOGISTICS SPECIFICATION
+      </span>
+      <button class="chip-btn" onclick="closeLegendModal()">&times;</button>
+    </div>
+    
+    <div style="font-size:12px; color:#94a3b8; line-height:1.5;">
+      GridSync monitors cross-sector infrastructure overlap within a strict <b>5-mile logistics radius</b> to support the <b>"Dig Once" initiative</b> (preventing civil road excavation collisions) and joint crane/machinery mobilization.
+    </div>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+      <!-- Electric -->
+      <div style="background:#0b0c16; border:1px solid rgba(255,255,255,0.12); border-radius:8px; padding:10px;">
+        <div style="font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:800; color:#93c5fd; margin-bottom:8px;">
+          ⚡ ELECTRIC (POWER INFRASTRUCTURE)
+        </div>
+        <div style="display:flex; flex-direction:column; gap:5px; font-size:11px;">
+          <div><span class="legend-badge badge-fpl">🔵 FPL</span> Electric Blue · Substation & Transmission</div>
+          <div><span class="legend-badge badge-duke">🟠 Duke Energy</span> Energy Orange · Regional Grid</div>
+          <div><span class="legend-badge badge-keys">🟢 Keys Energy</span> Emerald Green · Keys Operations</div>
+          <div><span class="legend-badge badge-keyscoop">🟣 Keys Co-op</span> Royal Purple · Subsea & Island Feeders</div>
+          <div><span class="legend-badge badge-glades">💠 Glades Co-op</span> Cyan · Lake Okeechobee Ag-Grid</div>
+        </div>
+      </div>
+
+      <!-- Water -->
+      <div style="background:#0b0c16; border:1px solid rgba(255,255,255,0.12); border-radius:8px; padding:10px;">
+        <div style="font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:800; color:#5eead4; margin-bottom:8px;">
+          💧 WATER (CIVIL / TRENCHES)
+        </div>
+        <div style="display:flex; flex-direction:column; gap:5px; font-size:11px;">
+          <div><span class="legend-badge badge-wasd">💧 Miami-Dade WASD</span> Teal · Urban Water Mains</div>
+          <div><span class="legend-badge badge-bcwws">🌊 Broward BCWWS</span> Deep Navy · Regional Pipes</div>
+          <div><span class="legend-badge badge-pbcwud">🚿 Palm Beach PBCWUD</span> Sky Blue · Trunk Lines</div>
+          <div><span class="legend-badge badge-fgua">🚰 FGUA</span> Light Blue · Central Florida Conduits</div>
+          <div><span class="legend-badge badge-tampawater">🌊 Tampa Bay Water</span> Deep Blue · Resilience Reservoirs</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Clash Classification Rules -->
+    <div style="background:rgba(0,240,255,0.06); border:1px solid var(--cyber-cyan); border-radius:8px; padding:10px; font-size:11.5px; line-height:1.5;">
+      <b style="color:var(--cyber-cyan); font-family:'JetBrains Mono',monospace;">DYNAMIC CLASH CATEGORIZATION (≤ 5 MILES):</b><br>
+      • <b>Power vs. Water:</b> Tagged as <i>"Right-of-Way Road Excavation Collision"</i> (Dig Once initiative).<br>
+      • <b>Power vs. Power:</b> Tagged as <i>"Shared Crane/Laydown Logistics"</i>.<br>
+      • <b>Water vs. Water:</b> Tagged as <i>"Shared Trenching Logistics"</i>.
+    </div>
+
+    <div style="display:flex; justify-content:flex-end;">
+      <button class="chip-btn" onclick="closeLegendModal()">CLOSE</button>
+    </div>
+  </div>
+</div>
+
+<!-- FORMAL COORDINATION INQUIRY EMAIL MODAL -->
+<div class="retro-modal-overlay" id="emailModal">
+  <div class="retro-modal-card">
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+      <span style="font-family:'JetBrains Mono',monospace; font-size:13.5px; font-weight:800; color:var(--cyber-cyan);">
+        FORMAL "DIG ONCE" & FERC ORDER 1920 COORDINATION INQUIRY
+      </span>
+      <button class="chip-btn" onclick="closeEmailModal()">&times;</button>
+    </div>
+    <div id="emailPreContent" style="background:#080911; border:1px solid rgba(255,255,255,0.12); border-radius:8px; padding:12px; font-family:'JetBrains Mono',monospace; font-size:11px; color:#e2e8f0; white-space:pre-wrap; max-height:280px; overflow-y:auto; line-height:1.5;"></div>
+    <div style="display:flex; gap:8px; justify-content:flex-end;">
+      <button class="chip-btn" id="copyBtn" onclick="copyEmailToClipboard()">📋 COPY EMAIL TO CLIPBOARD</button>
+      <button class="chip-btn" onclick="closeEmailModal()">CLOSE</button>
+    </div>
+  </div>
+</div>
+
+<!-- Leaflet Library -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+
+<script>
+// ==========================================
+// 1. DATA & 10 REGIONAL UTILITIES (ELECTRIC & WATER)
+// ==========================================
+const RADAR_RADIUS_METERS = 5 * 1609.344; // 8,046.72 meters (Strict 5-Mile Logistics Rule)
+
+const UTILITY_METAS = {
+  // Electric (Power)
+  'FPL': { name: 'Florida Power & Light (FPL)', type: 'Electric', color: '#2563eb', pinClass: 'fpl', icon: '⚡', email: 'gridops@fpl.com', phone: '(305) 552-3552' },
+  'Duke Energy': { name: 'Duke Energy Florida', type: 'Electric', color: '#f97316', pinClass: 'duke', icon: '🔋', email: 'fl-transmission@duke-energy.com', phone: '(800) 700-8744' },
+  'Keys Energy': { name: 'Keys Energy Services', type: 'Electric', color: '#10b981', pinClass: 'keys', icon: '🌴', email: 'dispatch@keysenergy.com', phone: '(305) 295-1000' },
+  'Keys Co-op': { name: 'Florida Keys Electric Co-op (Keys Co-op)', type: 'Electric', color: '#8b5cf6', pinClass: 'keyscoop', icon: '⚡', email: 'planning@fkeconline.com', phone: '(305) 852-2431' },
+  'Glades Co-op': { name: 'Glades Electric Cooperative (Glades Co-op)', type: 'Electric', color: '#06b6d4', pinClass: 'glades', icon: '🚜', email: 'ops@gladeselectric.com', phone: '(863) 946-6200' },
+
+  // Water (Civil/Trenches)
+  'Miami-Dade WASD': { name: 'Miami-Dade Water & Sewer (WASD)', type: 'Water', color: '#14b8a6', pinClass: 'wasd', icon: '💧', email: 'wasd-dispatch@miamidade.gov', phone: '(305) 274-9273' },
+  'Broward BCWWS': { name: 'Broward County Water & Wastewater (BCWWS)', type: 'Water', color: '#1e3a8a', pinClass: 'bcwws', icon: '🌊', email: 'bcwws-coordination@broward.org', phone: '(954) 831-3250' },
+  'Palm Beach PBCWUD': { name: 'Palm Beach Water Utilities Dept (PBCWUD)', type: 'Water', color: '#38bdf8', pinClass: 'pbcwud', icon: '🚿', email: 'pbcwud-ops@pbcgov.org', phone: '(561) 493-6000' },
+  'FGUA': { name: 'Florida Governmental Utility Authority (FGUA)', type: 'Water', color: '#60a5fa', pinClass: 'fgua', icon: '🚰', email: 'ops@fgua.com', phone: '(877) 552-3482' },
+  'Tampa Bay Water': { name: 'Tampa Bay Water Regional Utility', type: 'Water', color: '#1d4ed8', pinClass: 'tampawater', icon: '🌊', email: 'dispatch@tampabaywater.org', phone: '(813) 996-7000' }
+};
+
+const INITIAL_PROJECTS = [
+  // ELECTRIC (Power)
+  { id: 'elec-1', type: 'Electric', utility: 'FPL', name: 'Miami Substation Upgrade', lat: 25.7617, lng: -80.1918, start: '2027-03-01', end: '2027-09-01', cost: 2100000 },
+  { id: 'elec-2', type: 'Electric', utility: 'FPL', name: 'Broward Transmission Line', lat: 26.1224, lng: -80.1434, start: '2027-02-15', end: '2027-08-15', cost: 3400000 },
+  { id: 'elec-3', type: 'Electric', utility: 'Duke Energy', name: 'Dade Border Upgrade', lat: 25.8500, lng: -80.3000, start: '2027-03-10', end: '2027-09-10', cost: 1900000 },
+  { id: 'elec-4', type: 'Electric', utility: 'Keys Energy', name: 'Key West Hardening', lat: 24.5551, lng: -81.7800, start: '2027-01-10', end: '2027-07-10', cost: 1800000 },
+  { id: 'elec-5', type: 'Electric', utility: 'Glades Co-op', name: 'Okeechobee Ag-Grid', lat: 27.2439, lng: -80.8298, start: '2027-03-15', end: '2027-09-15', cost: 3100000 },
+  { id: 'elec-6', type: 'Electric', utility: 'Keys Co-op', name: 'Key Largo Interconnect', lat: 25.0865, lng: -80.4473, start: '2027-04-01', end: '2027-10-01', cost: 1900000 },
+
+  // WATER (Civil/Trenches)
+  { id: 'wat-1', type: 'Water', utility: 'Miami-Dade WASD', name: 'Downtown Water Main Replacement', lat: 25.7700, lng: -80.1900, start: '2027-04-01', end: '2027-08-01', cost: 1500000 },
+  { id: 'wat-2', type: 'Water', utility: 'Broward BCWWS', name: 'Fort Lauderdale Pipe Trench', lat: 26.1200, lng: -80.1400, start: '2027-02-01', end: '2027-07-01', cost: 2800000 },
+  { id: 'wat-3', type: 'Water', utility: 'Tampa Bay Water', name: 'Resilience Reservoir', lat: 27.9500, lng: -82.4500, start: '2027-05-01', end: '2027-11-01', cost: 4200000 },
+  { id: 'wat-4', type: 'Water', utility: 'Palm Beach PBCWUD', name: 'West Palm Trunk Main Loop', lat: 26.7080, lng: -80.0510, start: '2027-06-01', end: '2027-12-01', cost: 2200000 },
+  { id: 'wat-5', type: 'Water', utility: 'FGUA', name: 'Pasco Utility Corridor Conduit', lat: 28.2500, lng: -82.4500, start: '2027-03-01', end: '2027-09-01', cost: 1700000 },
+  { id: 'wat-6', type: 'Water', utility: 'Miami-Dade WASD', name: 'Hialeah Water Treatment Bypass', lat: 25.8600, lng: -80.2850, start: '2027-05-01', end: '2027-10-01', cost: 2600000 }
+];
+
+function milesApart(lat1, lon1, lat2, lon2) {
+  const R = 3958.8;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
+  return 2 * R * Math.asin(Math.sqrt(a));
+}
+
+function datesOverlap(aStart, aEnd, bStart, bEnd) {
+  const s1 = new Date(aStart).getTime();
+  const e1 = new Date(aEnd).getTime();
+  const s2 = new Date(bStart).getTime();
+  const e2 = new Date(bEnd).getTime();
+  const MS_90_DAYS = 90 * 24 * 60 * 60 * 1000;
+  if (s1 <= e2 && s2 <= e1) return true;
+  if (e1 < s2 && (s2 - e1) <= MS_90_DAYS) return true;
+  if (e2 < s1 && (s1 - e2) <= MS_90_DAYS) return true;
+  return false;
+}
+
+// 5-Mile Logistics Radar Rule
+function computeClashes(list) {
+  const clashes = [];
+  for (let i = 0; i < list.length; i++) {
+    for (let j = i + 1; j < list.length; j++) {
+      const a = list[i], b = list[j];
+      if (a.utility === b.utility) continue;
+
+      const dist = milesApart(a.lat, a.lng, b.lat, b.lng);
+      if (dist <= 5 && datesOverlap(a.start, a.end, b.start, b.end)) {
+        let clashType = "Shared Crane/Laydown Logistics"; // Power vs Power
+        if (a.type !== b.type) {
+          clashType = "Right-of-Way Road Excavation Collision"; // Power vs Water ("Dig Once")
+        } else if (a.type === 'Water' && b.type === 'Water') {
+          clashType = "Shared Trenching Logistics"; // Water vs Water
+        }
+
+        clashes.push({
+          a,
+          b,
+          dist: Math.round(dist * 10) / 10,
+          clashType,
+          savings: Math.round(((a.cost || 2000000) + (b.cost || 2000000)) * 0.15)
+        });
+      }
+    }
+  }
+  return clashes;
+}
+
+// App State
+let activeProjects = [];
+let activeOverlaps = [];
+let map = null;
+let currentTileLayer = null;
+let baseMapLayers = [];
+let proposedLayers = { marker: null, circle: null, lines: [] };
+let assistantLayers = { marker: null, circle: null };
+let selectedSpot = { lat: 25.8195, lng: -80.3553 };
+let chatHistory = [];
+
+const REGIONS = {
+  southfl: { lat: 26.05, lng: -80.35, zoom: 9 },
+  miami: { lat: 25.78, lng: -80.22, zoom: 12 },
+  ftlauderdale: { lat: 26.12, lng: -80.14, zoom: 12 },
+  keys: { lat: 24.80, lng: -80.95, zoom: 9 },
+  tampa: { lat: 27.95, lng: -82.46, zoom: 10 },
+  orlando: { lat: 28.5383, lng: -81.3792, zoom: 11 }
+};
+
+// ==========================================
+// 2. DATA INITIALIZATION & FEED
+// ==========================================
+async function initData() {
+  try {
+    const [projRes, overlapRes] = await Promise.all([
+      fetch('/api/projects').then(r => r.ok ? r.json() : Promise.reject('Projects fetch failed')),
+      fetch('/api/overlaps').then(r => r.ok ? r.json() : Promise.reject('Overlaps fetch failed'))
+    ]);
+    activeProjects = Array.isArray(projRes) && projRes.length > 0 ? projRes : INITIAL_PROJECTS;
+    activeOverlaps = overlapRes && Array.isArray(overlapRes.overlaps) ? overlapRes.overlaps : computeClashes(activeProjects);
+  } catch (err) {
+    console.warn("Using fallback multi-utility dataset:", err);
+    activeProjects = [...INITIAL_PROJECTS];
+    activeOverlaps = computeClashes(activeProjects);
+  }
+
+  renderHUDAndFeed();
+}
+
+function renderHUDAndFeed() {
+  const count = activeOverlaps.length;
+  const totalSavings = activeOverlaps.reduce((sum, o) => sum + o.savings, 0);
+
+  const banner = document.getElementById("hudBanner");
+  const feedCountTag = document.getElementById("feedCountTag");
+  feedCountTag.innerText = `${count} DETECTED`;
+
+  if (count > 0) {
+    banner.className = "retro-hud-banner red";
+    banner.innerHTML = `<span class="pulse-dot" style="background:#ef4444"></span>🚨 ${count} OVERLAPS DETECTED (5-MILE LOGISTICS RADAR) · $${(totalSavings / 1e6).toFixed(1)}M IN SHARED MOBILIZATION SAVINGS`;
+  } else {
+    banner.className = "retro-hud-banner green";
+    banner.innerHTML = `<span class="pulse-dot" style="background:#10b981"></span>✅ 100% CLEAR · 0 OVERLAPS (5-MILE LOGISTICS RADAR)`;
+  }
+
+  const container = document.getElementById("feedListContainer");
+  container.innerHTML = "";
+
+  activeOverlaps.forEach((o, i) => {
+    const row = document.createElement("div");
+    row.style.background = "rgba(11, 12, 22, 0.75)";
+    row.style.border = "1px solid rgba(239, 68, 68, 0.35)";
+    row.style.borderLeft = "3px solid #ef4444";
+    row.style.borderRadius = "7px";
+    row.style.padding = "8px 10px";
+    row.style.cursor = "pointer";
+    row.onclick = () => zoomToClashPair(o.a.lat, o.a.lng, o.b.lat, o.b.lng);
+    row.innerHTML = `
+      <div style="display:flex; justify-content:space-between; font-size:11.5px; font-weight:800; color:#fca5a5;">
+        <span>#${i + 1} ${o.a.name} &times; ${o.b.name}</span>
+        <span style="font-family:'JetBrains Mono',monospace;">${o.dist} mi</span>
+      </div>
+      <div style="font-size:10px; color:#f87171; font-weight:700; margin-top:2px;">
+        ⚠️ ${o.clashType}
+      </div>
+      <div style="display:flex; justify-content:space-between; font-size:10.5px; color:#cbd5e1; margin-top:3px;">
+        <span>${o.a.utility} & ${o.b.utility}</span>
+        <span style="color:#4ade80; font-weight:700;">Save ~$${(o.savings/1000).toFixed(0)}K</span>
+      </div>
+    `;
+    container.appendChild(row);
+  });
+}
+
+// ==========================================
+// 3. MAP CANVAS & BASEMAP SWITCHER (CARTO DARK MATTER & POSITRON)
+// ==========================================
+const TILE_SOURCES = {
+  dark: {
+    url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions" target="_blank">CARTO</a>',
+    subdomains: 'abcd',
+    maxZoom: 20
+  },
+  positron: {
+    url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions" target="_blank">CARTO</a>',
+    subdomains: 'abcd',
+    maxZoom: 20
+  },
+  sat: {
+    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    attribution: 'Tiles &copy; Esri &mdash; USDA, USGS, AeroGRID',
+    maxZoom: 19
+  },
+  esri: {
+    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
+    attribution: 'Tiles &copy; Esri &mdash; DeLorme, NAVTEQ, TomTom',
+    maxZoom: 19
+  }
+};
+
+function switchBaseTile(type) {
+  if (!map) return;
+  if (currentTileLayer) map.removeLayer(currentTileLayer);
+  const cfg = TILE_SOURCES[type] || TILE_SOURCES.dark;
+  currentTileLayer = L.tileLayer(cfg.url, {
+    attribution: cfg.attribution,
+    subdomains: cfg.subdomains || 'abc',
+    maxZoom: cfg.maxZoom || 20
+  }).addTo(map);
+  currentTileLayer.bringToBack();
+
+  document.getElementById('btnTileDark')?.classList.toggle('active', type === 'dark');
+  document.getElementById('btnTilePositron')?.classList.toggle('active', type === 'positron');
+  document.getElementById('btnTileSat')?.classList.toggle('active', type === 'sat');
+  document.getElementById('btnTileEsri')?.classList.toggle('active', type === 'esri');
+}
+
+function initMap() {
+  map = L.map('map', {
+    center: [26.05, -80.35],
+    zoom: 9,
+    zoomControl: true
+  });
+
+  // Immediately render with Esri.WorldStreetMap tiles
+  switchBaseTile('esri');
+
+  // Immediately call invalidateSize() so map tiles calculate dimensions & render properly without staying blank
+  map.invalidateSize();
+  setTimeout(() => { if (map) map.invalidateSize(); }, 60);
+  setTimeout(() => { if (map) map.invalidateSize(); }, 250);
+  setTimeout(() => { if (map) map.invalidateSize(); }, 600);
+  window.addEventListener('resize', () => { if (map) map.invalidateSize(); });
+
+  // Instant Map Interactivity: Click anywhere to drop proposed pin and scan
+  map.on('click', (e) => {
+    handleMapClick(e.latlng.lat, e.latlng.lng);
+  });
+
+  renderGridLayers();
+
+  // Initialize Proposed Site at default location
+  dropProposedPin(selectedSpot.lat, selectedSpot.lng, false);
+  scanForClashes(false);
+}
+
+function renderGridLayers() {
+  baseMapLayers.forEach(l => map.removeLayer(l));
+  baseMapLayers = [];
+
+  const clashNames = new Set();
+  activeOverlaps.forEach(o => {
+    clashNames.add(o.a.name);
+    clashNames.add(o.b.name);
+  });
+
+  // Project Markers with 10-Utility Color Coding
+  activeProjects.forEach(p => {
+    const isClash = clashNames.has(p.name);
+    const meta = UTILITY_METAS[p.utility] || { pinClass: 'fpl', icon: '⚡', color: '#2563eb' };
+
+    const customIcon = L.divIcon({
+      className: 'leaflet-custom-marker',
+      html: `<div class="custom-pin-html ${meta.pinClass} ${isClash ? 'clash' : ''}">${meta.icon}</div>`,
+      iconSize: [30, 30],
+      iconAnchor: [15, 15]
+    });
+
+    const marker = L.marker([p.lat, p.lng], { icon: customIcon }).addTo(map);
+    marker.bindPopup(`
+      <div style="font-family:'Inter',sans-serif; min-width:220px; color:#0f172a;">
+        <b style="font-size:13.5px; color:#0f172a;">${p.name}</b>
+        <div style="margin:4px 0; display:flex; align-items:center; gap:6px;">
+          <span style="font-size:10px; font-weight:800; padding:2px 7px; border-radius:4px; color:white; background:${meta.color};">
+            ${p.utility}
+          </span>
+          <span style="font-size:10px; font-weight:700; color:#475569;">${p.type || 'Infrastructure'}</span>
+        </div>
+        <div style="font-size:11.5px; color:#475569;"><b>Timeline:</b> ${p.start} &rarr; ${p.end}</div>
+        <div style="font-size:11.5px; color:#16a34a; font-weight:700;"><b>Cost:</b> $${(p.cost / 1e6).toFixed(1)}M</div>
+        <button style="margin-top:6px; background:#0f172a; color:#ffffff; border:none; padding:4px 8px; border-radius:4px; font-size:10.5px; cursor:pointer;" onclick="openEmailGenerator('${p.utility}', '${p.name}', '${meta.email}')">
+          ✉️ Draft Liaison Inquiry
+        </button>
+      </div>
+    `);
+    baseMapLayers.push(marker);
+  });
+
+  // Clash Zones: Red translucent circular collision bubbles with connecting lines
+  activeOverlaps.forEach(o => {
+    const glowLine = L.polyline([[o.a.lat, o.a.lng], [o.b.lat, o.b.lng]], {
+      color: '#f87171',
+      weight: 8,
+      opacity: 0.45
+    }).addTo(map);
+    baseMapLayers.push(glowLine);
+
+    const coreLine = L.polyline([[o.a.lat, o.a.lng], [o.b.lat, o.b.lng]], {
+      color: '#ef4444',
+      weight: 3.5,
+      opacity: 0.95
+    }).addTo(map);
+    baseMapLayers.push(coreLine);
+
+    const midLat = (o.a.lat + o.b.lat) / 2;
+    const midLng = (o.a.lng + o.b.lng) / 2;
+    const bubble = L.circle([midLat, midLng], {
+      color: '#ef4444',
+      weight: 1.5,
+      fillColor: '#ef4444',
+      fillOpacity: 0.16,
+      radius: Math.max(o.dist * 1609.344 / 2 + 600, 2000)
+    }).addTo(map);
+    baseMapLayers.push(bubble);
+  });
+}
+
+// ==========================================
+// 4. INSTANT MAP INTERACTIVITY (CLICK-TO-SCAN)
+// ==========================================
+function dropProposedPin(lat, lng, pan = true) {
+  selectedSpot = { lat, lng };
+
+  if (pan && map) {
+    map.panTo([lat, lng], { animate: true, duration: 0.5 });
+  }
+
+  document.getElementById("pickLat").value = lat.toFixed(4);
+  document.getElementById("pickLng").value = lng.toFixed(4);
+  document.getElementById("coordStatusText").innerText = `[${lat.toFixed(4)}, ${lng.toFixed(4)}]`;
+
+  // Purple Proposed Site SVG Pin
+  const purplePinSvg = `
+    <div class="proposed-pin-marker">
+      <svg width="34" height="42" viewBox="0 0 34 42" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M17 1C8.163 1 1 8.163 1 17C1 26.5 17 41 17 41C17 41 33 26.5 33 17C33 8.163 25.837 1 17 1Z" 
+              fill="url(#purplePinGrad)" stroke="#FFFFFF" stroke-width="2.5"/>
+        <circle cx="17" cy="17" r="7.5" fill="#FFFFFF"/>
+        <circle cx="17" cy="17" r="4.5" fill="#8B5CF6"/>
+        <defs>
+          <linearGradient id="purplePinGrad" x1="0" y1="0" x2="34" y2="42" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#A855F7"/>
+            <stop offset="100%" stop-color="#6D28D9"/>
+          </linearGradient>
+        </defs>
+      </svg>
+    </div>
+  `;
+
+  if (proposedLayers.marker) {
+    proposedLayers.marker.setLatLng([lat, lng]);
+  } else {
+    const spotIcon = L.divIcon({
+      className: 'leaflet-custom-marker',
+      html: purplePinSvg,
+      iconSize: [34, 42],
+      iconAnchor: [17, 41],
+      popupAnchor: [0, -41]
+    });
+    proposedLayers.marker = L.marker([lat, lng], { icon: spotIcon, zIndexOffset: 2500 }).addTo(map);
+  }
+
+  proposedLayers.marker.bindPopup(`
+    <div style="font-family:'Inter',sans-serif; color:#0f172a; padding:2px;">
+      <b style="font-size:13.5px; color:#6d28d9;">Proposed Site</b><br>
+      <span style="font-size:11.5px; font-family:'JetBrains Mono',monospace;">[${lat.toFixed(4)}, ${lng.toFixed(4)}]</span><br>
+      <span style="font-size:10.5px; color:#7c3aed; font-weight:700;">5-Mile Logistics Radar Active</span>
+    </div>
+  `);
+}
+
+function handleMapClick(lat, lng) {
+  dropProposedPin(lat, lng, true);
+  // Automatically execute the clash scan without requiring a button press
+  scanForClashes(false);
+}
+
+function onCoordManualChange() {
+  const lat = parseFloat(document.getElementById("pickLat").value);
+  const lng = parseFloat(document.getElementById("pickLng").value);
+  if (!isNaN(lat) && !isNaN(lng)) {
+    dropProposedPin(lat, lng, true);
+    scanForClashes(false);
+  }
+}
+
+function applyPreset(name, lat, lng, defaultUtil, zoom = 12) {
+  document.getElementById("pickName").value = name;
+  if (defaultUtil) {
+    document.getElementById("pickUtil").value = defaultUtil;
+  }
+  dropProposedPin(lat, lng, true);
+  if (map && zoom) map.setView([lat, lng], zoom, { animate: true });
+  scanForClashes(false);
+}
+
+function clearProposedPerimeter() {
+  if (proposedLayers.circle) {
+    map.removeLayer(proposedLayers.circle);
+    proposedLayers.circle = null;
+  }
+  proposedLayers.lines.forEach(l => map.removeLayer(l));
+  proposedLayers.lines = [];
+}
+
+// Core 5-Mile Scan
+function scanForClashes(centerOnSite = false) {
+  const lat = selectedSpot.lat;
+  const lng = selectedSpot.lng;
+  const userUtil = document.getElementById("pickUtil").value;
+  const userType = UTILITY_METAS[userUtil]?.type || 'Electric';
+  const start = document.getElementById("pickStart").value;
+  const end = document.getElementById("pickEnd").value;
+  const resultBox = document.getElementById("resultBanner");
+
+  if (centerOnSite && map) {
+    map.panTo([lat, lng], { animate: true, duration: 0.5 });
+  }
+
+  clearProposedPerimeter();
+
+  // Find opposing utility clashes <= 5 miles with overlapping dates
+  const opposingProjects = activeProjects.filter(q => q.utility !== userUtil);
+  const clashes = opposingProjects
+    .filter(q => milesApart(lat, lng, q.lat, q.lng) <= 5 && datesOverlap(start, end, q.start, q.end))
+    .map(q => {
+      const dist = Math.round(milesApart(lat, lng, q.lat, q.lng) * 10) / 10;
+      const savings = Math.round(((q.cost || 2000000) + 2000000) * 0.15);
+      
+      let clashType = "Shared Crane/Laydown Logistics"; // Power vs Power
+      if (userType !== q.type) {
+        clashType = "Right-of-Way Road Excavation Collision"; // Dig Once initiative
+      } else if (userType === 'Water' && q.type === 'Water') {
+        clashType = "Shared Trenching Logistics"; // Water vs Water
+      }
+
+      return { ...q, dist, clashType, savings };
+    })
+    .sort((a, b) => a.dist - b.dist);
+
+  if (clashes.length > 0) {
+    const primary = clashes[0];
+
+    // 1. Red 5-mile perimeter circle
+    proposedLayers.circle = L.circle([lat, lng], {
+      radius: RADAR_RADIUS_METERS,
+      color: '#ef4444',
+      weight: 2.5,
+      opacity: 0.95,
+      fillColor: '#ef4444',
+      fillOpacity: 0.22,
+      dashArray: '6, 6'
+    }).addTo(map);
+
+    // 2. Red connecting polylines to clashing pins
+    clashes.forEach(c => {
+      const glow = L.polyline([[lat, lng], [c.lat, c.lng]], {
+        color: '#f87171',
+        weight: 8,
+        opacity: 0.45
+      }).addTo(map);
+
+      const boldLine = L.polyline([[lat, lng], [c.lat, c.lng]], {
+        color: '#ef4444',
+        weight: 3.5,
+        opacity: 0.95,
+        dashArray: '6, 6'
+      }).addTo(map);
+
+      proposedLayers.lines.push(glow, boldLine);
+    });
+
+    // 3. Warning Card with tagged collision type
+    resultBox.className = "result-banner clash";
+    resultBox.innerHTML = `
+      <div style="font-weight:900; font-size:13px; color:#fca5a5; margin-bottom:4px; display:flex; align-items:center; gap:6px;">
+        <span>🚨</span> <span>${primary.clashType.toUpperCase()}</span>
+      </div>
+      <div style="font-size:12px; line-height:1.5; color:#f1f5f9;">
+        <b>${primary.utility} (${primary.type})</b> has <b>${primary.name}</b> scheduled <b>${primary.dist} mi away</b> during these dates.
+      </div>
+      <div style="margin-top:6px; font-size:11px; color:#fca5a5; background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.3); border-radius:4px; padding:4px 8px;">
+        ${userType !== primary.type ? '🚧 <b>Dig Once Initiative:</b> Joint right-of-way easement coordination prevents tearing up the same road twice.' : '🏗️ <b>Shared Logistics:</b> Opportunity for coordinated crane & heavy machinery laydown.'}
+      </div>
+      <div style="margin-top:6px; font-size:11.5px; font-weight:800; color:#4ade80;">
+        💰 Shared Mobilization Savings: +$${(primary.savings/1000).toFixed(0)}K potential cost reduction.
+      </div>
+    `;
+
+  } else {
+    // 1. Green 5-mile perimeter circle
+    proposedLayers.circle = L.circle([lat, lng], {
+      radius: RADAR_RADIUS_METERS,
+      color: '#10b981',
+      weight: 2.5,
+      opacity: 0.95,
+      fillColor: '#10b981',
+      fillOpacity: 0.18
+    }).addTo(map);
+
+    // 2. Clear to Build Card
+    resultBox.className = "result-banner clear";
+    resultBox.innerHTML = `
+      <div style="font-weight:900; font-size:13.5px; color:#86efac; margin-bottom:4px; display:flex; align-items:center; gap:6px;">
+        <span>✅</span> <span>CLEAR TO BUILD</span>
+      </div>
+      <div style="font-size:12px; color:#f1f5f9; line-height:1.45;">
+        5-Mile Logistics Radar 100% Clear. No cross-utility infrastructure work planned within 5 miles (8,046 m).
+      </div>
+      <div style="font-size:11px; color:#86efac; opacity:0.9; margin-top:5px; background:rgba(16,185,129,0.15); border:1px solid rgba(16,185,129,0.3); border-radius:4px; padding:4px 8px;">
+        🛡️ 0 Opposing Right-of-Way Clashes across all 10 Florida Electric & Water utilities.
+      </div>
+    `;
+  }
+}
+
+// ==========================================
+// 5. AGENTIC ASSISTANT CHAT LOOP
+// ==========================================
+function switchSidebarTab(tabName) {
+  document.getElementById("tabBtnSimulator").classList.toggle("active", tabName === 'simulator');
+  document.getElementById("tabBtnAssistant").classList.toggle("active", tabName === 'assistant');
+  document.getElementById("paneSimulator").style.display = tabName === 'simulator' ? 'flex' : 'none';
+  document.getElementById("paneAssistant").style.display = tabName === 'assistant' ? 'flex' : 'none';
+  setTimeout(() => { if (map) map.invalidateSize(); }, 50);
+}
+
+function toggleDispatcherModal() {
+  switchSidebarTab('assistant');
+  setTimeout(() => { if (map) map.invalidateSize(); }, 50);
+}
+
+function openLegendModal() {
+  document.getElementById("legendModal").classList.add("open");
+}
+function closeLegendModal() {
+  document.getElementById("legendModal").classList.remove("open");
+}
+
+function openEmailGenerator(targetUtility, projectName, pmEmail) {
+  const userUtil = document.getElementById("pickUtil").value;
+  const userProject = document.getElementById("pickName").value || "Regional Grid Expansion";
+  const start = document.getElementById("pickStart").value;
+  const end = document.getElementById("pickEnd").value;
+
+  const emailText = `FROM: ${userUtil} — Infrastructure Coordination Operations
+TO: ${targetUtility} Project Liaison <${pmEmail}>
+CC: Florida Public Service Commission (FPSC), FERC Order 1920 Regional Transmission & Dig Once Desk
+DATE: ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+SUBJECT: Formal 5-Mile Coordination & Dig Once Inquiry: ${userProject} & ${projectName}
+
+Dear ${targetUtility} Planning & Engineering Liaison,
+
+Under FERC Order 1920 and Florida's "Dig Once" Right-of-Way Infrastructure Policy, ${userUtil} is requesting inter-utility construction coordination for capital work within our shared 5-mile logistics corridor.
+
+Active Corridor Overlap:
+• ${userUtil} Project: ${userProject} (${start} → ${end})
+• ${targetUtility} Project: ${projectName}
+• Proximity: Within the strict 5-mile (8,046 m) logistics radar
+• Priority: Joint excavation scheduling, shared traffic diversion, and combined crane laydown
+
+Estimated Joint Savings:
+Coordinated mobilization unlocks significant capital machinery reductions while eliminating repeat road tearing in the community.
+
+Please confirm availability for a 30-minute virtual coordination sync next week.
+
+Sincerely,
+${userUtil} Operations Desk
+Reference Case: FL-DIGONCE-5MI-COORDINATION`;
+
+  document.getElementById("emailPreContent").innerText = emailText;
+  document.getElementById("emailModal").classList.add("open");
+}
+
+function closeEmailModal() {
+  document.getElementById("emailModal").classList.remove("open");
+}
+
+function copyEmailToClipboard() {
+  const text = document.getElementById("emailPreContent").innerText;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById("copyBtn");
+    btn.innerText = "✅ COPIED TO CLIPBOARD!";
+    setTimeout(() => { btn.innerText = "📋 COPY EMAIL TO CLIPBOARD"; }, 2500);
+  });
+}
+
+// Map Control: Agent Execution Plotter
+function plotAssistantRecommendation(lat, lng, locationName = "Assistant Recommendation") {
+  if (!map) return;
+
+  // Clear previous recommendation layers
+  if (assistantLayers.marker) {
+    map.removeLayer(assistantLayers.marker);
+    assistantLayers.marker = null;
+  }
+  if (assistantLayers.circle) {
+    map.removeLayer(assistantLayers.circle);
+    assistantLayers.circle = null;
+  }
+
+  // 1. Pan and zoom map to proposed coordinates
+  map.setView([lat, lng], 11, { animate: true });
+
+  // 2. Drop distinct Neon Magenta/White Pin
+  const neonMagentaSvg = `
+    <div class="assistant-neon-magenta-pin">
+      <svg width="38" height="46" viewBox="0 0 38 46" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <filter id="magentaHalo" x="-30%" y="-30%" width="160%" height="160%">
+            <feDropShadow dx="0" dy="0" stdDeviation="3.5" flood-color="#ff007f" flood-opacity="0.95" />
+          </filter>
+          <linearGradient id="neonPinGrad" x1="0" y1="0" x2="38" y2="46" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#ff007f"/>
+            <stop offset="100%" stop-color="#b00057"/>
+          </linearGradient>
+        </defs>
+        <path d="M19 1C9.059 1 1 9.059 1 19C1 29.5 19 45 19 45C19 45 37 29.5 37 19C37 9.059 28.941 1 19 1Z" 
+              fill="url(#neonPinGrad)" 
+              stroke="#FFFFFF" 
+              stroke-width="3" 
+              filter="url(#magentaHalo)"/>
+        <circle cx="19" cy="18" r="9" fill="#FFFFFF"/>
+        <circle cx="19" cy="18" r="5.5" fill="#FF007F"/>
+        <circle cx="19" cy="18" r="2.2" fill="#FFFFFF"/>
+      </svg>
+    </div>
+  `;
+
+  const pinIcon = L.divIcon({
+    className: 'leaflet-custom-marker',
+    html: neonMagentaSvg,
+    iconSize: [38, 46],
+    iconAnchor: [19, 45],
+    popupAnchor: [0, -45]
+  });
+
+  assistantLayers.marker = L.marker([lat, lng], {
+    icon: pinIcon,
+    zIndexOffset: 3400
+  }).addTo(map);
+
+  // 3. Draw a green 5-mile safety circle to prove the zone is clear
+  assistantLayers.circle = L.circle([lat, lng], {
+    radius: RADAR_RADIUS_METERS,
+    className: 'radar-circle-pulse-clear',
+    color: '#10b981',
+    weight: 2.5,
+    dashArray: '6, 6',
+    fillColor: '#10b981',
+    fillOpacity: 0.18
+  }).addTo(map);
+
+  // 4. Add popup
+  const cleanTitle = locationName || "Assistant Recommendation";
+  assistantLayers.marker.bindPopup(`
+    <div style="font-family:'Inter',sans-serif; color:#0f172a; padding:4px 2px; min-width:210px;">
+      <div style="display:flex; align-items:center; gap:6px; margin-bottom:5px;">
+        <span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:#ff007f; box-shadow:0 0 8px #ff007f;"></span>
+        <b style="font-size:13.5px; color:#ff007f; letter-spacing:-0.2px;">${escapeHtml(cleanTitle)}</b>
+      </div>
+      <div style="font-size:11.5px; font-family:'JetBrains Mono',monospace; color:#334155; margin-bottom:5px;">
+        Coordinates: [${Number(lat).toFixed(4)}, ${Number(lng).toFixed(4)}]
+      </div>
+      <div style="display:inline-block; background:rgba(16,185,129,0.12); border:1px solid #10b981; border-radius:4px; padding:3px 6px; font-size:10.5px; color:#059669; font-weight:700;">
+        100% Clear · Verified 5-Mile Safety Radar
+      </div>
+    </div>
+  `).openPopup();
+}
+
+let qaChatStarted = false;
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+async function sendDispatchQuestion() {
+  const input = document.getElementById("qaInput");
+  const sendBtn = document.getElementById("qaSendBtn");
+  const userInput = input.value.trim();
+  if (!userInput) return;
+
+  const out = document.getElementById("qaOutput");
+  if (!qaChatStarted) {
+    out.innerHTML = "";
+    qaChatStarted = true;
+  }
+
+  input.value = "";
+  if (sendBtn) {
+    sendBtn.disabled = true;
+    sendBtn.style.opacity = "0.5";
+  }
+
+  chatHistory.push({ role: 'user', content: userInput });
+
+  const userMsgEl = document.createElement("div");
+  userMsgEl.className = "qa-chat-entry user";
+  userMsgEl.style.marginBottom = "8px";
+  userMsgEl.innerHTML = `<span style="color:#94a3b8; font-size:10px; font-family:'JetBrains Mono',monospace; font-weight:700;">YOU &gt;</span> <span style="color:#f1f5f9; font-weight:500;">${escapeHtml(userInput)}</span>`;
+  out.appendChild(userMsgEl);
+
+  const typingEl = document.createElement("div");
+  typingEl.id = "qaTypingIndicator";
+  typingEl.className = "qa-chat-entry typing";
+  typingEl.style.marginBottom = "8px";
+  typingEl.style.color = "var(--cyber-cyan)";
+  typingEl.style.fontFamily = "'JetBrains Mono', monospace";
+  typingEl.style.fontSize = "11px";
+  typingEl.innerHTML = `&gt; querying assistant dispatch...`;
+  out.appendChild(typingEl);
+  out.scrollTop = out.scrollHeight;
+
+  const projectData = (typeof activeProjects !== 'undefined' && Array.isArray(activeProjects) && activeProjects.length > 0)
+    ? activeProjects
+    : (typeof INITIAL_PROJECTS !== 'undefined' ? INITIAL_PROJECTS : []);
+
+  try {
+    const res = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question: userInput, projects: projectData, history: chatHistory })
+    });
+    const data = await res.json();
+
+    if (typingEl.parentNode) {
+      typingEl.parentNode.removeChild(typingEl);
+    }
+
+    const rawResponse = data.text || (data.answer ? `> Assistant: ${data.answer}` : '> Communication established.');
+
+    // 5. Intercept execution tag: [PLOT_LOCATION: lat, lng, "Name"] or fallback <<<PLOT:lat,lng>>>
+    const plotLocationRegex = /\[PLOT_LOCATION:\s*([-\d.]+)\s*,\s*([-\d.]+)(?:\s*,\s*["']?([^\]"']+)["']?)?\]/i;
+    const fallbackPlotRegex = /<<<PLOT:\s*([-\d.]+)\s*,\s*([-\d.]+)>>>/i;
+
+    let targetLat = null;
+    let targetLng = null;
+    let targetName = "Assistant Recommendation";
+
+    const tagMatch = rawResponse.match(plotLocationRegex);
+    if (tagMatch) {
+      targetLat = parseFloat(tagMatch[1]);
+      targetLng = parseFloat(tagMatch[2]);
+      if (tagMatch[3] && tagMatch[3].trim()) {
+        targetName = tagMatch[3].trim();
+      }
+    } else {
+      const fallbackMatch = rawResponse.match(fallbackPlotRegex);
+      if (fallbackMatch) {
+        targetLat = parseFloat(fallbackMatch[1]);
+        targetLng = parseFloat(fallbackMatch[2]);
+      }
+    }
+
+    // Execute map action if coordinates detected
+    if (targetLat !== null && targetLng !== null && !isNaN(targetLat) && !isNaN(targetLng)) {
+      plotAssistantRecommendation(targetLat, targetLng, targetName);
+    }
+
+    // 6. Strip execution tag so user only sees conversational reply
+    const textWithoutTag = rawResponse
+      .replace(plotLocationRegex, '')
+      .replace(fallbackPlotRegex, '')
+      .trim();
+    const cleanResponse = textWithoutTag.replace(/^>\s*(Assistant:)?\s*/i, '').trim();
+
+    chatHistory.push({ role: 'assistant', content: rawResponse });
+
+    const aiMsgEl = document.createElement("div");
+    aiMsgEl.className = "qa-chat-entry ai";
+    aiMsgEl.style.marginBottom = "10px";
+    aiMsgEl.style.paddingLeft = "8px";
+    aiMsgEl.style.borderLeft = "2px solid var(--cyber-cyan)";
+    aiMsgEl.style.background = "rgba(0, 240, 255, 0.05)";
+    aiMsgEl.style.borderRadius = "0 6px 6px 0";
+    aiMsgEl.style.paddingTop = "4px";
+    aiMsgEl.style.paddingBottom = "4px";
+    aiMsgEl.innerHTML = `
+      <div style="color:var(--cyber-cyan); font-size:10px; font-family:'JetBrains Mono',monospace; font-weight:700;">&gt; Assistant:</div>
+      <div style="color:#6ee7b7; font-size:11.5px; line-height:1.45; font-family:'Inter',sans-serif; margin-top:2px; word-break:break-word;">${escapeHtml(cleanResponse)}</div>
+    `;
+    out.appendChild(aiMsgEl);
+
+  } catch (err) {
+    if (typingEl.parentNode) {
+      typingEl.parentNode.removeChild(typingEl);
+    }
+    const errEl = document.createElement("div");
+    errEl.className = "qa-chat-entry error";
+    errEl.style.marginBottom = "8px";
+    errEl.style.color = "#f87171";
+    errEl.style.fontFamily = "'JetBrains Mono', monospace";
+    errEl.style.fontSize = "11px";
+    errEl.innerHTML = `&gt; Error: Communication with assistant dispatch failed.`;
+    out.appendChild(errEl);
+  } finally {
+    if (sendBtn) {
+      sendBtn.disabled = false;
+      sendBtn.style.opacity = "1";
+    }
+    out.scrollTop = out.scrollHeight;
+  }
+}
+
+function askPreset(q) {
+  document.getElementById("qaInput").value = q;
+  sendDispatchQuestion();
+}
+
+function zoomRegion(key) {
+  const r = REGIONS[key];
+  if (!r || !map) return;
+  map.setView([r.lat, r.lng], r.zoom, { animate: true });
+}
+
+function zoomToClashPair(lat1, lng1, lat2, lng2) {
+  if (!map) return;
+  map.fitBounds([[lat1, lng1], [lat2, lng2]], {
+    padding: [70, 70],
+    maxZoom: 14
+  });
+}
+
+// Start application
+window.addEventListener('DOMContentLoaded', () => {
+  initMap();
+  initData();
+});
+</script>
+</body>
+</html>

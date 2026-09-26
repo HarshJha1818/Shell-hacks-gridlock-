@@ -1,11 +1,27 @@
-<div align="center">
+# GridSync Backend — Beginner Guide
 
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
+## What the backend does (simple)
+- Your map page asks the backend: "give me projects" and "find overlaps"
+- The backend does the math and sends back answers
+- That's it. Frontend = what you see, Backend = the brain.
 
-  <h1>Built with AI Studio</h2>
+## How to run
+1. Install Node.js from nodejs.org
+2. Open terminal in this folder:
+```
+npm install
+cp .env.example .env
+npm start
+```
+3. Open http://localhost:3000
 
-  <p>The fastest path from prompt to production with Gemini.</p>
+## The 4 jobs
+- Person 1: Edit `public/index.html` to make it pretty
+- Person 2: Edit `server.js` where it says THE DATA to add more projects
+- Person 3: Get a free Gemini key, put in `.env` for the AI button
+- Person 4: Pitch + GoDaddy domain
 
-  <a href="https://aistudio.google.com/apps">Start building</a>
-
-</div>
+## If it breaks
+- "npm not found" → install Node.js first
+- Port in use → change PORT in `.env` to 3001
+- Just want the simple version? Use the 1-file `gridsync/index.html` instead, no backend needed.
