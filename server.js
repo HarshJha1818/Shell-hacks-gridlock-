@@ -72,8 +72,8 @@ function datesOverlap(aStart, aEnd, bStart, bEnd) {
   return false;
 }
 
-// 5-Mile Logistics Radar Rule:
-// Strictly <= 5 miles AND overlapping construction dates.
+// 3-Mile Logistics Radar Rule:
+// Strictly <= 3 miles AND overlapping construction dates.
 // Categorizes collisions dynamically:
 // - Power vs. Power: "Shared Crane/Laydown Logistics"
 // - Power vs. Water: "Right-of-Way Road Excavation Collision" (The "Dig Once" initiative)
@@ -83,11 +83,11 @@ function findOverlaps(list) {
   for (let i = 0; i < list.length; i++) {
     for (let j = i + 1; j < list.length; j++) {
       const a = list[i], b = list[j];
-      if (a.utility === b.utility) continue; 
+      if (a.utility === b.utility) continue;
 
       const dist = milesApart(a.lat, a.lng, b.lat, b.lng);
-      // Strictly <= 5 miles
-      if (dist <= 5 && datesOverlap(a.start, a.end, b.start, b.end)) {
+      // Strictly <= 3 miles
+      if (dist <= 3 && datesOverlap(a.start, a.end, b.start, b.end)) {
         let clashType = "Shared Crane/Laydown Logistics"; // Electric vs Electric
         if (a.type !== b.type) {
           clashType = "Right-of-Way Road Excavation Collision"; // Power vs Water ("Dig Once")
@@ -153,7 +153,7 @@ app.post('/api/check', (req, res) => {
     const roundedDist = Math.round(dist * 10) / 10;
     const touching = datesOverlap(userStart, userEnd, q.start, q.end);
 
-    if (dist <= 5 && touching) {
+    if (dist <= 3 && touching) {
       let clashType = "Shared Crane/Laydown Logistics";
       if (userType !== q.type) {
         clashType = "Right-of-Way Road Excavation Collision"; // Dig Once initiative
@@ -175,21 +175,21 @@ app.post('/api/check', (req, res) => {
         cost: q.cost,
         savings: Math.round(((q.cost || 2000000) + 2000000) * 0.15),
         status: 'OVERLAP',
-        message: `${roundedDist} mi away, within 5-mile logistics radius (${clashType}).`
+        message: `${roundedDist} mi away, within 3-mile logistics radius (${clashType}).`
       });
-    } else if (dist <= 5 && !touching) {
+    } else if (dist <= 3 && !touching) {
       nearMisses.push({
         name: q.name,
         utility: q.utility,
         dist: roundedDist,
-        reason: "Within 5 miles but construction dates outside mobilization window."
+        reason: "Within 3 miles but construction dates outside mobilization window."
       });
-    } else if (dist > 5 && touching) {
+    } else if (dist > 3 && touching) {
       nearMisses.push({
         name: q.name,
         utility: q.utility,
         dist: roundedDist,
-        reason: "More than 5 miles — outside 5-mile logistics radar."
+        reason: "More than 3 miles — outside 3-mile logistics radar."
       });
     }
   }
@@ -336,10 +336,10 @@ Water (Civil/Trenches): Miami-Dade WASD, Broward BCWWS, Palm Beach PBCWUD, FGUA,
 
 Active project data: ${JSON.stringify(projectList)}
 
-You strictly enforce the 5-mile logistics radius and the "Dig Once" right-of-way initiative.
+You strictly enforce the 3-mile logistics radius and the "Dig Once" right-of-way initiative.
 
 Follow this strict 2-step execution loop:
-STEP 1 (Propose): If the user asks for a clear build site, untouched location, or recommendation, analyze the active electric and water project data. Find a coordinate that is at least 5+ miles away from ALL active projects (e.g., Orlando [28.5383, -81.3792], Naples [26.1420, -81.7948], or Ocala [29.1872, -82.1401]). Name the location, confirm it is 100% clear of all 10 electric and water utility projects within the 5-mile logistics radius, and END your response by asking: "Would you like me to plot this location on your map?" Do NOT append any execution tags yet.
+STEP 1 (Propose): If the user asks for a clear build site, untouched location, or recommendation, analyze the active electric and water project data. Find a coordinate that is at least 3+ miles away from ALL active projects (e.g., Orlando [28.5383, -81.3792], Naples [26.1420, -81.7948], or Ocala [29.1872, -82.1401]). Name the location, confirm it is 100% clear of all 10 electric and water utility projects within the 3-mile logistics radius, and END your response by asking: "Would you like me to plot this location on your map?" Do NOT append any execution tags yet.
 STEP 2 (Execute): If the user approves (e.g., "yes", "plot it", "do it"), reply with a direct conversational confirmation and append this exact machine-readable tag at the very end of your response: [PLOT_LOCATION: latitude, longitude, "Location Name"].
 
 RULES: Never use emojis. Be direct, comprehensive, and professional.`;
