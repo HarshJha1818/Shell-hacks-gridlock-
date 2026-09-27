@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,326 +7,523 @@
     <meta name="description" content="Cross-utility coordination tool detecting power grid project overlaps between FPL and Duke Energy to prevent gridlock and maximize shared crew savings.">
     <meta property="og:title" content="GridSync - Stop the GridLock">
     <meta property="og:description" content="Cross-utility coordination tool detecting power grid project overlaps between FPL and Duke Energy to prevent gridlock and maximize shared crew savings.">
-    
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        darkCanvas: '#0b0c16',
-                        darkCard: '#131525',
-                        lightCanvas: '#f8fafc',
-                        figmaBlue: '#0d99ff',
-                        cyberCyan: '#00f0ff',
-                    },
-                    fontFamily: {
-                        sans: ['Plus Jakarta Sans', 'Inter', '-apple-system', 'sans-serif'],
-                        mono: ['JetBrains Mono', 'ui-monospace', 'monospace'],
-                    }
-                }
-            }
-        }
-    </script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+    <!-- Three.js for 3D Globe -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
     <style>
+        :root {
+            --bg: #111113;
+            --ink: #F8F7F4;
+            --accent: #FFD700;
+            --accent-soft: rgba(255, 215, 0, 0.12);
+            --line: rgba(255, 255, 255, 0.12);
+            --line-yellow: rgba(255, 215, 0, 0.35);
+            --text-muted: #9da3af;
+            --radius: 12px;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
         body {
-            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bg);
+            color: var(--ink);
+            font-family: 'Space Grotesk', -apple-system, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            overflow-x: hidden;
             -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-        }
-        .font-mono { font-family: 'JetBrains Mono', monospace; }
-
-        /* Figma Canvas Subtle Dot Matrix Grid */
-        .figma-grid-dark {
-            background-color: #0b0c16;
-            background-image: radial-gradient(circle, rgba(255, 255, 255, 0.08) 1px, transparent 1px);
-            background-size: 28px 28px;
-        }
-        .figma-grid-light {
-            background-color: #f8fafc;
-            background-image: radial-gradient(circle, rgba(15, 23, 42, 0.07) 1px, transparent 1px);
-            background-size: 28px 28px;
+            position: relative;
         }
 
-        /* Ambient Figma Radial Glow */
-        .figma-radial-dark {
-            background: radial-gradient(circle at 50% 32%, rgba(0, 240, 255, 0.10) 0%, rgba(13, 153, 255, 0.05) 35%, transparent 70%);
-        }
-        .figma-radial-light {
-            background: radial-gradient(circle at 50% 32%, rgba(13, 153, 255, 0.08) 0%, rgba(0, 240, 255, 0.04) 40%, transparent 70%);
-        }
-
-        /* Glassmorphism Accents */
-        .figma-glass {
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
+        .label {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 0.25em;
+            opacity: 0.7;
         }
 
-        /* Smooth Custom Select Styling */
-        select::-ms-expand { display: none; }
+        /* Top Header */
+        header {
+            width: 100%;
+            height: 70px;
+            padding: 0 40px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--line);
+            background: rgba(17, 17, 19, 0.95);
+            backdrop-filter: blur(10px);
+            z-index: 10;
+        }
+
+        .active-util-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 12.5px;
+            color: var(--text-muted);
+        }
+
+        .active-util-header b {
+            color: var(--accent);
+            font-family: 'Space Mono', monospace;
+            font-size: 13px;
+        }
+
+        .btn-change-company {
+            color: var(--accent);
+            text-decoration: underline;
+            cursor: pointer;
+            background: none;
+            border: none;
+            font-family: 'Space Mono', monospace;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .btn-change-company:hover { color: #ffffff; }
+
+        /* Main Hero Section */
+        .hero {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 24px 20px;
+            z-index: 2;
+        }
+
+        .eyebrow {
+            font-family: 'Space Mono', monospace;
+            font-size: 11px;
+            color: var(--accent);
+            letter-spacing: 0.25em;
+            text-transform: uppercase;
+            margin-bottom: 16px;
+        }
+
+        h1 {
+            font-size: clamp(3.5rem, 8vw, 6.5rem);
+            line-height: 0.92;
+            font-weight: 700;
+            letter-spacing: -0.05em;
+            margin-bottom: 18px;
+            text-transform: uppercase;
+            color: var(--ink);
+        }
+
+        .subtext {
+            max-width: 560px;
+            font-size: 1.05rem;
+            color: var(--text-muted);
+            line-height: 1.55;
+            margin-bottom: 30px;
+            font-weight: 400;
+        }
+
+        /* Centralized Form Box */
+        .form-box {
+            background: rgba(24, 24, 28, 0.95);
+            border: 1px solid var(--line-yellow);
+            border-radius: var(--radius);
+            padding: 28px 32px;
+            width: 100%;
+            max-width: 540px;
+            box-shadow: 0 16px 48px rgba(0, 0, 0, 0.45);
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            backdrop-filter: blur(14px);
+        }
+
+        .select-group {
+            text-align: left;
+        }
+
+        .select-group label {
+            display: block;
+            font-family: 'Space Mono', monospace;
+            font-size: 10px;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 6px;
+        }
+
         select {
-            -webkit-appearance: none;
-            -moz-appearance: none;
-            appearance: none;
+            width: 100%;
+            padding: 13px 16px;
+            border-radius: var(--radius);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            background: #111113;
+            color: var(--ink);
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 14px;
+            outline: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        select:focus {
+            border-color: var(--accent);
+        }
+
+        select option {
+            background: #18181c;
+            color: var(--ink);
+        }
+
+        .btn-launch {
+            width: 100%;
+            padding: 15px;
+            background: var(--accent);
+            color: #111113;
+            border: none;
+            border-radius: var(--radius);
+            font-family: 'Space Mono', monospace;
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(255, 215, 0, 0.35);
+            transition: all 0.25s ease;
+            margin-top: 6px;
+        }
+
+        .btn-launch:hover {
+            filter: brightness(1.12);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 26px rgba(255, 215, 0, 0.45);
+        }
+
+        /* 3D Globe in Bottom Right Corner */
+        .globe-wrapper {
+            position: absolute;
+            bottom: 24px;
+            right: 32px;
+            width: 250px;
+            height: 250px;
+            z-index: 5;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #globeCanvasContainer {
+            width: 210px;
+            height: 210px;
+            cursor: grab;
+        }
+        #globeCanvasContainer:active { cursor: grabbing; }
+
+        .globe-caption {
+            font-family: 'Space Mono', monospace;
+            font-size: 9px;
+            letter-spacing: 0.12em;
+            color: var(--accent);
+            opacity: 0.8;
+            text-transform: uppercase;
+            margin-top: -6px;
+        }
+
+        /* Footer */
+        footer {
+            width: 100%;
+            height: 60px;
+            padding: 0 40px;
+            border-top: 1px solid var(--line);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-family: 'Space Mono', monospace;
+            font-size: 10px;
+            color: var(--text-muted);
+            letter-spacing: 0.15em;
+        }
+
+        /* Modal */
+        #infoModal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.92);
+            z-index: 100;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+            backdrop-filter: blur(8px);
+        }
+
+        @media (max-width: 900px) {
+            header, footer { padding: 0 16px; }
+            .globe-wrapper { display: none; }
         }
     </style>
 </head>
-<body id="bodyRoot" class="figma-grid-dark text-slate-100 min-h-screen flex flex-col justify-between transition-all duration-300 relative overflow-x-hidden selection:bg-cyan-500/30 selection:text-cyan-200">
+<body id="pageBody">
 
-    <!-- Ambient Center Spotlight -->
-    <div id="ambientGlow" class="absolute inset-0 pointer-events-none figma-radial-dark transition-all duration-500"></div>
+<!-- Top Header with active utility company & 'Change Company' link -->
+<header>
+    <div class="active-util-header">
+        <span>CURRENT IDENTITY:</span>
+        <b id="activeCompanyLabel">⚡ Florida Power & Light (FPL)</b>
+        <button class="btn-change-company" onclick="focusCompanyDropdown()">[Change Company]</button>
+    </div>
+    <div style="font-weight: 700; letter-spacing: -0.02em; font-family:'Space Mono',monospace;">GRIDSYNC</div>
+    <div>
+        <button class="btn-change-company" onclick="openInfoModal()">[Overview]</button>
+    </div>
+</header>
 
-    <!-- TOP BAR (FIGMA HEADER) -->
-    <header class="w-full px-6 py-5 flex justify-between items-center max-w-7xl mx-auto z-20">
-        <!-- Logo & Brand Identifier -->
-        <a href="index.html" class="flex items-center space-x-3 group text-decoration-none">
-            <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/20 group-hover:scale-105 transition-transform duration-200">
-                <span class="text-white text-lg font-bold">⚡</span>
-            </div>
-            <div class="flex flex-col">
-                <div class="flex items-center space-x-2">
-                    <span class="text-xl font-extrabold tracking-tight font-mono text-slate-900 dark:text-white group-hover:text-cyan-500 dark:group-hover:text-cyan-400 transition-colors">GridSync</span>
-                    <span class="hidden sm:inline-block px-2 py-0.5 rounded-md text-[10px] font-mono font-semibold tracking-wider uppercase bg-cyan-500/10 dark:bg-cyan-400/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20">
-                        FERC 1920
-                    </span>
-                </div>
-            </div>
-        </a>
-
-        <!-- Top-Right Actions: Info Button -->
-        <div class="flex items-center space-x-3">
-            <button id="infoBtn" class="px-4 py-2 rounded-xl border border-slate-300 dark:border-white/10 bg-white/80 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 text-slate-700 dark:text-slate-200 text-xs font-semibold figma-glass shadow-sm hover:shadow transition-all duration-150 flex items-center space-x-2 cursor-pointer active:scale-95">
-                <span class="text-cyan-600 dark:text-cyan-400 text-sm">ℹ️</span>
-                <span>About GridSync</span>
-            </button>
-        </div>
-    </header>
-
-    <!-- CENTERED LANDING HERO & SEARCH COMPONENT -->
-    <main class="flex-1 flex flex-col items-center justify-center px-4 text-center max-w-3xl mx-auto -mt-6 sm:-mt-10 z-20 w-full">
-        <!-- Eyebrow Badge -->
-        <div class="inline-flex items-center space-x-2 mb-5 px-3.5 py-1.5 rounded-full border border-pink-500/30 bg-pink-500/10 dark:bg-pink-500/10 text-pink-600 dark:text-pink-400 font-mono text-xs font-semibold tracking-wide uppercase shadow-sm">
-            <span class="w-1.5 h-1.5 rounded-full bg-pink-500 animate-pulse"></span>
-            <span>ShellHacks 10th Anniversary // Sperry Tech GridLock Challenge</span>
-        </div>
-        
-        <!-- Hero Title -->
-        <h1 class="text-5xl sm:text-6xl md:text-7xl font-extrabold tracking-tight mb-4 text-slate-950 dark:text-white">
-            <span class="bg-gradient-to-r from-cyan-500 via-blue-500 to-indigo-500 dark:from-cyan-400 dark:via-blue-400 dark:to-indigo-400 bg-clip-text text-transparent">
-                GridSync
-            </span>
-        </h1>
-        
-        <!-- Subtitle -->
-        <p class="text-slate-600 dark:text-slate-300 text-base sm:text-lg mb-8 max-w-xl leading-relaxed font-normal">
-            Coordinate multi-utility capital projects across South Florida. Prevent duplicate road excavations and enforce the 5-mile "Dig Once" standard across power and water grids.
-        </p>
-
-        <!-- FIGMA-STYLE FLOATING WHITE DROPDOWN INPUT BAR -->
-        <div class="w-full max-w-xl">
-            <div class="bg-white p-2.5 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.12)] dark:shadow-[0_25px_60px_rgba(0,0,0,0.65)] flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-2 border border-slate-200 dark:border-white/10 transition-all duration-200 focus-within:ring-2 focus-within:ring-cyan-500 focus-within:border-cyan-500">
-                <!-- Location Pin Icon -->
-                <div class="hidden sm:flex pl-3 text-slate-400 items-center justify-center">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-cyan-600">
-                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-                        <circle cx="12" cy="10" r="3"></circle>
-                    </svg>
-                </div>
-
-                <!-- Custom Smooth Select with Dark Font -->
-                <div class="relative flex-1">
-                    <select id="citySelect" class="w-full bg-transparent text-slate-900 font-semibold py-3.5 pl-3 pr-9 focus:outline-none cursor-pointer text-sm sm:text-base tracking-tight placeholder-slate-400">
-                        <option value="" disabled selected>Select a South Florida City / Region...</option>
-                        <option value="miami">Miami-Dade (Doral / Hialeah / Downtown)</option>
-                        <option value="broward">Broward (Fort Lauderdale / Pompano)</option>
-                        <option value="palm_beach">Palm Beach (West Palm Beach / Boca)</option>
-                        <option value="keys">The Keys (Key West / Key Largo)</option>
-                        <option value="glades">Glades / Lake Okeechobee Corridor</option>
-                    </select>
-                    <!-- Chevron Down Icon -->
-                    <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                            <polyline points="6 9 12 15 18 9"></polyline>
-                        </svg>
-                    </div>
-                </div>
-
-                <!-- Launch Button (Figma Button with Subtle Glow) -->
-                <button id="launchBtn" class="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 active:scale-[0.98] text-white font-bold px-7 py-3.5 rounded-xl transition-all duration-150 shadow-md shadow-cyan-600/25 shrink-0 cursor-pointer flex items-center justify-center space-x-2 group">
-                    <span class="text-sm tracking-wide">Launch</span>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="group-hover:translate-x-0.5 transition-transform duration-150">
-                        <line x1="5" y1="12" x2="19" y2="12"></line>
-                        <polyline points="12 5 19 12 12 19"></polyline>
-                    </svg>
-                </button>
-            </div>
-
-            <!-- Quick Region Chips (Figma Segmented Shortcuts) -->
-            <div class="mt-4 flex flex-wrap items-center justify-center gap-2 text-xs">
-                <span class="text-slate-400 dark:text-slate-400 font-mono text-[11px]">Quick Jump:</span>
-                <button onclick="quickSelectRegion('miami')" class="px-2.5 py-1 rounded-lg bg-slate-200/70 hover:bg-slate-300 dark:bg-white/5 dark:hover:bg-white/10 text-slate-700 dark:text-slate-300 transition-colors cursor-pointer border border-transparent dark:border-white/5">Miami-Dade</button>
-                <button onclick="quickSelectRegion('broward')" class="px-2.5 py-1 rounded-lg bg-slate-200/70 hover:bg-slate-300 dark:bg-white/5 dark:hover:bg-white/10 text-slate-700 dark:text-slate-300 transition-colors cursor-pointer border border-transparent dark:border-white/5">Broward</button>
-                <button onclick="quickSelectRegion('palm_beach')" class="px-2.5 py-1 rounded-lg bg-slate-200/70 hover:bg-slate-300 dark:bg-white/5 dark:hover:bg-white/10 text-slate-700 dark:text-slate-300 transition-colors cursor-pointer border border-transparent dark:border-white/5">Palm Beach</button>
-                <button onclick="quickSelectRegion('keys')" class="px-2.5 py-1 rounded-lg bg-slate-200/70 hover:bg-slate-300 dark:bg-white/5 dark:hover:bg-white/10 text-slate-700 dark:text-slate-300 transition-colors cursor-pointer border border-transparent dark:border-white/5">The Keys</button>
-            </div>
-
-            <!-- Inline Launch Notice -->
-            <div id="selectionNotice" class="hidden mt-3 text-xs font-mono text-cyan-600 dark:text-cyan-400 transition-all flex items-center justify-center gap-1.5 animate-pulse">
-                <span>⚡</span>
-                <span>Initializing 5-mile logistics radar for selected region...</span>
-            </div>
-        </div>
-    </main>
-
-    <!-- FOOTER & THEME TOGGLE (FIGMA BOTTOM BAR) -->
-    <footer class="w-full px-6 py-5 flex flex-col sm:flex-row justify-between items-center max-w-7xl mx-auto gap-4 z-20">
-        <!-- Status & ShellHacks Info -->
-        <div class="flex items-center space-x-2 text-xs text-slate-500 dark:text-slate-400 font-mono">
-            <span class="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span>Built for ShellHacks 2026 // Multi-Utility Grid Monitor</span>
+<!-- Main Form Section -->
+<main class="hero">
+    <div class="eyebrow">REGIONAL COORDINATION ENGINE // FERC ORDER 1920</div>
+    <h1>GRIDSYNC</h1>
+    <p class="subtext">
+        Coordinate multi-utility capital projects across South Florida. Prevent duplicate road excavations and enforce the strict 5-mile "Dig Once" standard.
+    </p>
+    
+    <div class="form-box">
+        <div class="select-group">
+            <label for="companySelect">Select Your Utility Company</label>
+            <select id="companySelect" onchange="updateIdentity()">
+                <optgroup label="Electric (Power Infrastructure)">
+                    <option value="FPL" selected>⚡ Florida Power & Light (FPL)</option>
+                    <option value="Duke Energy">🟠 Duke Energy Florida</option>
+                    <option value="Keys Energy">🌴 Keys Energy Services</option>
+                    <option value="Keys Co-op">⚡ Florida Keys Electric Co-op (Keys Co-op)</option>
+                    <option value="Glades Co-op">🚜 Glades Electric Cooperative (Glades Co-op)</option>
+                </optgroup>
+                <optgroup label="Water (Civil / Trenching Infrastructure)">
+                    <option value="Miami-Dade WASD">💧 Miami-Dade Water & Sewer (WASD)</option>
+                    <option value="Broward BCWWS">🌊 Broward County Water & Wastewater (BCWWS)</option>
+                    <option value="Palm Beach PBCWUD">🚿 Palm Beach Water Utilities Dept (PBCWUD)</option>
+                    <option value="FGUA">🚰 Florida Governmental Utility Authority (FGUA)</option>
+                    <option value="Tampa Bay Water">🌊 Tampa Bay Water Regional Utility</option>
+                </optgroup>
+            </select>
         </div>
 
-        <!-- Bottom-Right Figma Theme Toggle -->
-        <button id="themeToggle" class="px-4 py-2 rounded-full bg-white dark:bg-[#131525] border border-slate-300 dark:border-white/10 text-slate-800 dark:text-amber-400 shadow-sm hover:shadow text-xs font-semibold flex items-center space-x-2 transition-all duration-200 hover:scale-105 cursor-pointer figma-glass">
-            <span id="themeIcon">☀️</span>
-            <span id="themeText">Light Mode</span>
+        <div class="select-group">
+            <label for="regionSelect">Select a South Florida Region</label>
+            <select id="regionSelect">
+                <option value="miami" selected>Miami-Dade (Doral / Downtown / Hialeah)</option>
+                <option value="broward">Broward (Fort Lauderdale / Pompano)</option>
+                <option value="palm_beach">Palm Beach (West Palm Beach / Boca)</option>
+                <option value="keys">The Keys (Key West / Key Largo)</option>
+                <option value="glades">Glades / Lake Okeechobee Corridor</option>
+                <option value="tampa">Tampa Bay Regional Grid</option>
+                <option value="orlando">Orlando / Central Florida Corridor</option>
+            </select>
+        </div>
+
+        <button id="launchDataBtn" class="btn-launch" onclick="launchWithGlobeAnimation()">
+            LAUNCH DATA &rarr;
         </button>
-    </footer>
+    </div>
+</main>
 
-    <!-- INFO MODAL (FIGMA INSPECTOR / OVERVIEW DIALOG) -->
-    <div id="infoModal" class="fixed inset-0 bg-slate-950/70 backdrop-blur-md z-50 flex items-center justify-center hidden p-4 transition-all duration-200">
-        <div class="bg-white dark:bg-[#121424] border border-slate-200 dark:border-cyan-500/30 rounded-3xl p-6 sm:p-7 max-w-md w-full relative shadow-2xl text-slate-800 dark:text-slate-100 transition-all">
-            <!-- Close Button -->
-            <button id="closeModal" class="absolute top-5 right-5 text-slate-400 hover:text-slate-600 dark:hover:text-white text-base font-bold w-7 h-7 rounded-full flex items-center justify-center hover:bg-slate-100 dark:hover:bg-white/10 transition-colors cursor-pointer">
-                ✕
-            </button>
-            
-            <!-- Modal Header -->
-            <div class="flex items-center space-x-2.5 mb-4">
-                <div class="w-8 h-8 rounded-lg bg-cyan-500/10 dark:bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 flex items-center justify-center font-bold">
-                    ⚡
-                </div>
-                <h3 class="text-lg font-bold font-mono text-slate-900 dark:text-white">About GridSync</h3>
-            </div>
-            
-            <!-- Body -->
-            <p class="text-sm text-slate-600 dark:text-slate-300 leading-relaxed mb-5">
-                GridSync is an AI-powered cross-utility coordination platform designed for Florida's power (FPL, Duke, Co-ops) and water utilities (WASD, BCWWS). It tracks capital projects across a strict 5-mile logistics radius to eliminate Right-of-Way road gridlock and enforce <strong>"Dig Once"</strong> municipal excavation efficiency.
-            </p>
-            
-            <!-- Checklist Card -->
-            <div class="bg-slate-50 dark:bg-black/30 p-4 rounded-2xl border border-slate-200/80 dark:border-white/5 text-xs text-slate-700 dark:text-cyan-300 font-mono space-y-2 mb-5">
-                <div class="flex items-center gap-2">
-                    <span class="text-emerald-500 font-bold">✓</span>
-                    <span>FERC Order 1920 Regional Compliance</span>
-                </div>
-                <div class="flex items-center gap-2">
-                    <span class="text-emerald-500 font-bold">✓</span>
-                    <span>Real-time 5-Mile Multi-Utility Radar</span>
-                </div>
-                <div class="flex items-center gap-2">
-                    <span class="text-emerald-500 font-bold">✓</span>
-                    <span>Autonomous AI Assistant Dispatch Agent</span>
-                </div>
-            </div>
+<!-- Interactive 3D Globe in Bottom Right Corner -->
+<div class="globe-wrapper">
+    <div id="globeCanvasContainer"></div>
+    <div class="globe-caption">3D RADAR GLOBE // ROTATE TO PREVIEW</div>
+</div>
 
-            <!-- Footer Action -->
-            <div class="flex justify-end space-x-2">
-                <button id="modalLaunchBtn" class="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-semibold text-xs py-2.5 px-5 rounded-xl cursor-pointer shadow-md shadow-cyan-600/20 active:scale-95 transition-all">
-                    Open Map View &rarr;
-                </button>
-            </div>
+<footer>
+    <div>FERC 1920 COMPLIANT</div>
+    <div>SOUTH FLORIDA UTILITY GRID</div>
+    <div>SYSTEM: ONLINE</div>
+</footer>
+
+<!-- Overview Modal -->
+<div id="infoModal">
+    <div class="form-box" style="max-width: 520px; background: #18181c;">
+        <div class="label" style="color: var(--accent); margin-bottom: 0.5rem;">Executive Overview</div>
+        <h2 style="font-size: 1.8rem; margin-bottom: 1rem; color: #ffffff;">About GridSync</h2>
+        <p style="font-size: 0.95rem; color: var(--text-muted); line-height: 1.6; margin-bottom: 1.5rem;">
+            GridSync is an infrastructure coordination platform designed for Florida's power and water utilities. It monitors capital projects across a strict 5-mile logistics radius to eliminate road gridlock and enforce "Dig Once" municipal excavation synchronization.
+        </p>
+        <div style="display: flex; gap: 0.75rem; justify-content: flex-end;">
+            <button class="btn-change-company" onclick="closeInfoModal()">[Close]</button>
+            <button class="btn-launch" style="width: auto; padding: 10px 20px;" onclick="closeInfoModal(); launchWithGlobeAnimation();">Launch Map &rarr;</button>
         </div>
     </div>
+</div>
 
-    <!-- JAVASCRIPT FOR INTERACTIVITY -->
-    <script>
-        const html = document.documentElement;
-        const bodyRoot = document.getElementById('bodyRoot');
-        const ambientGlow = document.getElementById('ambientGlow');
-        const themeToggle = document.getElementById('themeToggle');
-        const themeIcon = document.getElementById('themeIcon');
-        const themeText = document.getElementById('themeText');
-        
-        const infoBtn = document.getElementById('infoBtn');
-        const infoModal = document.getElementById('infoModal');
-        const closeModal = document.getElementById('closeModal');
-        const modalLaunchBtn = document.getElementById('modalLaunchBtn');
-        
-        const launchBtn = document.getElementById('launchBtn');
-        const citySelect = document.getElementById('citySelect');
-        const selectionNotice = document.getElementById('selectionNotice');
+<script>
+    const companySelect = document.getElementById('companySelect');
+    const regionSelect = document.getElementById('regionSelect');
+    const activeCompanyLabel = document.getElementById('activeCompanyLabel');
+    const infoModal = document.getElementById('infoModal');
+    let isTransitioning = false;
 
-        // Theme Toggle Logic
-        function updateThemeUI(isDark) {
-            if (isDark) {
-                html.classList.add('dark');
-                bodyRoot.className = "figma-grid-dark text-slate-100 min-h-screen flex flex-col justify-between transition-all duration-300 relative overflow-x-hidden selection:bg-cyan-500/30 selection:text-cyan-200";
-                if (ambientGlow) ambientGlow.className = "absolute inset-0 pointer-events-none figma-radial-dark transition-all duration-500";
-                themeIcon.textContent = '☀️';
-                themeText.textContent = 'Light Mode';
-                themeToggle.className = "px-4 py-2 rounded-full bg-[#131525] border border-white/10 text-amber-400 shadow-sm hover:shadow text-xs font-semibold flex items-center space-x-2 transition-all duration-200 hover:scale-105 cursor-pointer figma-glass";
+    function updateIdentity() {
+        const text = companySelect.options[companySelect.selectedIndex].text;
+        activeCompanyLabel.innerText = text;
+    }
+
+    function focusCompanyDropdown() {
+        companySelect.focus();
+        companySelect.style.borderColor = 'var(--accent)';
+    }
+
+    function openInfoModal() { infoModal.style.display = 'flex'; }
+    function closeInfoModal() { infoModal.style.display = 'none'; }
+
+    // 3D Globe Implementation
+    function initGlobe() {
+        const container = document.getElementById('globeCanvasContainer');
+        if (!container || typeof THREE === 'undefined') return;
+
+        const width = container.clientWidth || 210;
+        const height = container.clientHeight || 210;
+
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
+        camera.position.z = 180;
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(width, height);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        container.appendChild(renderer.domElement);
+
+        const globeGroup = new THREE.Group();
+        scene.add(globeGroup);
+
+        // Core Dark Sphere
+        const sphereGeo = new THREE.SphereGeometry(58, 36, 36);
+        const sphereMat = new THREE.MeshBasicMaterial({ color: 0x141418 });
+        globeGroup.add(new THREE.Mesh(sphereGeo, sphereMat));
+
+        // Wireframe Grid
+        const wireGeo = new THREE.WireframeGeometry(new THREE.SphereGeometry(58.4, 24, 24));
+        const wireMat = new THREE.LineBasicMaterial({ color: 0xFFD700, transparent: true, opacity: 0.28 });
+        globeGroup.add(new THREE.LineSegments(wireGeo, wireMat));
+
+        // Surface Dots
+        const dotsGeo = new THREE.BufferGeometry();
+        const dotCount = 450;
+        const dotPositions = [];
+        for (let i = 0; i < dotCount; i++) {
+            const phi = Math.acos(-1 + (2 * i) / dotCount);
+            const theta = Math.sqrt(dotCount * Math.PI) * phi;
+            const r = 58.8;
+            dotPositions.push(
+                r * Math.cos(theta) * Math.sin(phi),
+                r * Math.sin(theta) * Math.sin(phi),
+                r * Math.cos(phi)
+            );
+        }
+        dotsGeo.setAttribute('position', new THREE.Float32BufferAttribute(dotPositions, 3));
+        const dotsMat = new THREE.PointsMaterial({ color: 0xF8F7F4, size: 1.5, transparent: true, opacity: 0.4 });
+        globeGroup.add(new THREE.Points(dotsGeo, dotsMat));
+
+        // Florida Highlight Beacon
+        const flLat = 25.8 * Math.PI / 180;
+        const flLng = -80.2 * Math.PI / 180;
+        const flR = 59.4;
+        const beaconGeo = new THREE.SphereGeometry(2.4, 16, 16);
+        const beaconMat = new THREE.MeshBasicMaterial({ color: 0xFFD700 });
+        const beacon = new THREE.Mesh(beaconGeo, beaconMat);
+        beacon.position.set(flR * Math.cos(flLat) * Math.sin(flLng), flR * Math.sin(flLat), flR * Math.cos(flLat) * Math.cos(flLng));
+        globeGroup.add(beacon);
+
+        // Interactive mouse drag
+        let isDragging = false;
+        let prevPos = { x: 0, y: 0 };
+        container.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            prevPos = { x: e.clientX, y: e.clientY };
+        });
+        window.addEventListener('mouseup', () => isDragging = false);
+        window.addEventListener('mousemove', (e) => {
+            if (!isDragging || isTransitioning) return;
+            globeGroup.rotation.y += (e.clientX - prevPos.x) * 0.008;
+            globeGroup.rotation.x += (e.clientY - prevPos.y) * 0.008;
+            prevPos = { x: e.clientX, y: e.clientY };
+        });
+
+        // Loop
+        function animate() {
+            requestAnimationFrame(animate);
+            if (!isDragging && !isTransitioning) {
+                globeGroup.rotation.y += 0.004;
+            }
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        window.globeApp = { renderer, scene, camera, globeGroup };
+    }
+
+    // Launch Transition: Rotate Globe -> Zoom in aggressively -> Fade to transparent -> Reveal map
+    function launchWithGlobeAnimation() {
+        if (isTransitioning) return;
+        isTransitioning = true;
+
+        const utility = companySelect.value || 'FPL';
+        const region = regionSelect.value || 'miami';
+        const pageBody = document.getElementById('pageBody');
+
+        const targetRotY = -(-80.2 * Math.PI / 180) - Math.PI / 2;
+        const targetRotX = -(25.8 * Math.PI / 180);
+
+        const startTime = performance.now();
+        const rotateDuration = 550;
+        const zoomDuration = 650;
+
+        const startRotX = window.globeApp ? window.globeApp.globeGroup.rotation.x : 0;
+        const startRotY = window.globeApp ? window.globeApp.globeGroup.rotation.y : 0;
+        const startCamZ = window.globeApp ? window.globeApp.camera.position.z : 180;
+
+        function step(now) {
+            const elapsed = now - startTime;
+            if (elapsed < rotateDuration) {
+                const progress = elapsed / rotateDuration;
+                const ease = 1 - Math.pow(1 - progress, 3);
+                if (window.globeApp) {
+                    window.globeApp.globeGroup.rotation.x = startRotX + (targetRotX - startRotX) * ease;
+                    window.globeApp.globeGroup.rotation.y = startRotY + (targetRotY - startRotY) * ease;
+                }
+                requestAnimationFrame(step);
+            } else if (elapsed < rotateDuration + zoomDuration) {
+                const zoomElapsed = elapsed - rotateDuration;
+                const zoomProgress = zoomElapsed / zoomDuration;
+                const zoomEase = Math.pow(zoomProgress, 3);
+
+                if (window.globeApp) {
+                    window.globeApp.camera.position.z = startCamZ - (startCamZ - 26) * zoomEase;
+                    window.globeApp.globeGroup.scale.setScalar(1 + zoomEase * 3.8);
+                }
+
+                if (zoomProgress > 0.40 && pageBody) {
+                    const fade = (zoomProgress - 0.40) / 0.60;
+                    pageBody.style.opacity = Math.max(0, 1 - fade);
+                }
+                requestAnimationFrame(step);
             } else {
-                html.classList.remove('dark');
-                bodyRoot.className = "figma-grid-light text-slate-900 min-h-screen flex flex-col justify-between transition-all duration-300 relative overflow-x-hidden selection:bg-cyan-500/20 selection:text-cyan-900";
-                if (ambientGlow) ambientGlow.className = "absolute inset-0 pointer-events-none figma-radial-light transition-all duration-500";
-                themeIcon.textContent = '🌙';
-                themeText.textContent = 'Dark Mode';
-                themeToggle.className = "px-4 py-2 rounded-full bg-white border border-slate-300 text-slate-800 shadow-sm hover:shadow text-xs font-semibold flex items-center space-x-2 transition-all duration-200 hover:scale-105 cursor-pointer figma-glass";
+                pageBody.style.opacity = '0';
+                window.location.href = `map.html?region=${region}&utility=${encodeURIComponent(utility)}&skipIntro=1`;
             }
         }
+        requestAnimationFrame(step);
+    }
 
-        themeToggle.addEventListener('click', () => {
-            const isCurrentlyDark = html.classList.contains('dark');
-            updateThemeUI(!isCurrentlyDark);
-        });
+    window.addEventListener('DOMContentLoaded', () => {
+        initGlobe();
+    });
+</script>
 
-        // Quick select helper
-        function quickSelectRegion(regionKey) {
-            if (citySelect) {
-                citySelect.value = regionKey;
-                launchDashboard();
-            }
-        }
-
-        // Info Modal Logic
-        infoBtn.addEventListener('click', () => infoModal.classList.remove('hidden'));
-        closeModal.addEventListener('click', () => infoModal.classList.add('hidden'));
-        window.addEventListener('click', (e) => {
-            if (e.target === infoModal) infoModal.classList.add('hidden');
-        });
-        window.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && !infoModal.classList.contains('hidden')) {
-                infoModal.classList.add('hidden');
-            }
-        });
-
-        if (modalLaunchBtn) {
-            modalLaunchBtn.addEventListener('click', () => {
-                infoModal.classList.add('hidden');
-                launchDashboard();
-            });
-        }
-
-        // Launch Dashboard Navigation
-        function launchDashboard() {
-            const selectedCity = citySelect.value || 'miami';
-            if (selectionNotice) selectionNotice.classList.remove('hidden');
-            setTimeout(() => {
-                window.location.href = `map.html?region=${selectedCity}`;
-            }, 180);
-        }
-
-        launchBtn.addEventListener('click', () => {
-            launchDashboard();
-        });
-
-        citySelect.addEventListener('change', () => {
-            if (selectionNotice) selectionNotice.classList.add('hidden');
-        });
-    </script>
 </body>
 </html>
